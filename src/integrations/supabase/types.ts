@@ -14,7 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      brands: {
+        Row: {
+          accent_color: string
+          address: string | null
+          company_name: string
+          created_at: string
+          email: string | null
+          id: string
+          logo_path: string | null
+          phone: string | null
+          primary_color: string
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          accent_color?: string
+          address?: string | null
+          company_name?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_path?: string | null
+          phone?: string | null
+          primary_color?: string
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          accent_color?: string
+          address?: string | null
+          company_name?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_path?: string | null
+          phone?: string | null
+          primary_color?: string
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      letterheads: {
+        Row: {
+          accent_color: string
+          body: string | null
+          created_at: string
+          font_family: string
+          font_size: number
+          id: string
+          letter_date: string | null
+          primary_color: string
+          recipient: string | null
+          signature_name: string | null
+          signature_title: string | null
+          subject: string | null
+          template: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string
+          body?: string | null
+          created_at?: string
+          font_family?: string
+          font_size?: number
+          id?: string
+          letter_date?: string | null
+          primary_color?: string
+          recipient?: string | null
+          signature_name?: string | null
+          signature_title?: string | null
+          subject?: string | null
+          template?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accent_color?: string
+          body?: string | null
+          created_at?: string
+          font_family?: string
+          font_size?: number
+          id?: string
+          letter_date?: string | null
+          primary_color?: string
+          recipient?: string | null
+          signature_name?: string | null
+          signature_title?: string | null
+          subject?: string | null
+          template?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
