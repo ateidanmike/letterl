@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-import { Phone, Mail, Globe, MapPin } from "lucide-react";
+import { Phone, Mail, Globe } from "lucide-react";
 import type { Brand, Letterhead } from "@/lib/letterhead/types";
 
 type Props = {
