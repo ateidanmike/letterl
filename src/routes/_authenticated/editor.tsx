@@ -56,6 +56,7 @@ const emptyBrand: Brand = {
   logo_url: null,
   primary_color: "#1E40AF",
   accent_color: "#16A34A",
+  watermark_text: null,
 };
 
 function Editor() {
@@ -99,6 +100,7 @@ function Editor() {
           logo_url: logoUrl,
           primary_color: brandRow.primary_color,
           accent_color: brandRow.accent_color,
+          watermark_text: (brandRow as { watermark_text?: string | null }).watermark_text ?? null,
         });
         setLetter((l) => ({
           ...l,
