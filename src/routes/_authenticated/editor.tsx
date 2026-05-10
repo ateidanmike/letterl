@@ -25,6 +25,8 @@ import {
 import { toast } from "sonner";
 import { Sparkles, Save, Download, ArrowLeft, RotateCcw } from "lucide-react";
 import { LetterheadPreview } from "@/components/letterhead/LetterheadPreview";
+import { AiPanel } from "@/components/letterhead/AiPanel";
+import { SignaturePad } from "@/components/letterhead/SignaturePad";
 import {
   DEFAULT_LETTERHEAD,
   FONTS,
@@ -35,6 +37,7 @@ import {
 } from "@/lib/letterhead/types";
 import { exportPdf } from "@/lib/letterhead/pdf-export";
 import { exportDocx } from "@/lib/letterhead/docx-export";
+import { exportPng } from "@/lib/letterhead/png-export";
 
 const searchSchema = z.object({ id: z.string().optional() });
 
@@ -53,6 +56,7 @@ const emptyBrand: Brand = {
   logo_url: null,
   primary_color: "#1E40AF",
   accent_color: "#16A34A",
+  watermark_text: null,
 };
 
 function Editor() {
@@ -96,6 +100,7 @@ function Editor() {
           logo_url: logoUrl,
           primary_color: brandRow.primary_color,
           accent_color: brandRow.accent_color,
+          watermark_text: (brandRow as { watermark_text?: string | null }).watermark_text ?? null,
         });
         setLetter((l) => ({
           ...l,
@@ -117,6 +122,8 @@ function Editor() {
           body: letterRow.body ?? "",
           signature_name: letterRow.signature_name ?? "",
           signature_title: letterRow.signature_title ?? "",
+          signature_data: (letterRow as { signature_data?: string | null }).signature_data ?? null,
+          folder: (letterRow as { folder?: string }).folder ?? "Inbox",
         });
       }
       setLoaded(true);
@@ -194,6 +201,16 @@ function Editor() {
     }
   };
 
+  const downloadPng = async (mime: "image/png" | "image/jpeg") => {
+    if (!previewRef.current) return;
+    toast.message(`Generating ${mime === "image/jpeg" ? "JPG" : "PNG"}…`);
+    try {
+      await exportPng(previewRef.current, letter.title || "letterhead", mime);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Image export failed");
+    }
+  };
+
   const previewScale = 0.6;
   const previewKey = useMemo(() => JSON.stringify({ brand, letter }), [brand, letter]);
 
@@ -222,6 +239,8 @@ function Editor() {
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={downloadPdf}>Download PDF</DropdownMenuItem>
                 <DropdownMenuItem onClick={downloadDocx}>Download DOCX</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => downloadPng("image/png")}>Download PNG</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => downloadPng("image/jpeg")}>Download JPG</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -233,6 +252,14 @@ function Editor() {
           placeholder="Letterhead title"
           className="text-base font-semibold"
         />
+
+        <Section title="AI assistant">
+          <AiPanel
+            body={letter.body}
+            onApplyBody={(text) => { setPreviousBody(letter.body); set("body", text); }}
+            onSubject={(s) => set("subject", s)}
+          />
+        </Section>
 
         <Section title="Template">
           <div className="grid grid-cols-2 gap-2">
@@ -357,6 +384,13 @@ function Editor() {
                 />
               </div>
             </div>
+          <div className="mt-3">
+            <Label className="text-xs">Signature image</Label>
+            <SignaturePad
+              value={letter.signature_data ?? null}
+              onChange={(v) => set("signature_data", v)}
+            />
+          </div>
           </div>
         </Section>
       </div>

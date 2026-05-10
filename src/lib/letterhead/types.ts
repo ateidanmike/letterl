@@ -1,4 +1,12 @@
-export type TemplateId = "classic" | "left-modern" | "minimal" | "bold-banner";
+export type TemplateId =
+  | "classic"
+  | "left-modern"
+  | "minimal"
+  | "bold-banner"
+  | "corporate"
+  | "legal"
+  | "executive"
+  | "monogram";
 
 export type Brand = {
   company_name: string;
@@ -9,6 +17,8 @@ export type Brand = {
   logo_url: string | null;
   primary_color: string;
   accent_color: string;
+  watermark_text?: string | null;
+  name?: string;
 };
 
 export type Letterhead = {
@@ -24,6 +34,8 @@ export type Letterhead = {
   body: string;
   signature_name: string;
   signature_title: string;
+  signature_data?: string | null;
+  folder?: string;
 };
 
 export const TEMPLATES: { id: TemplateId; name: string; description: string }[] = [
@@ -31,6 +43,10 @@ export const TEMPLATES: { id: TemplateId; name: string; description: string }[] 
   { id: "left-modern", name: "Left Modern", description: "Logo left, contact right" },
   { id: "minimal", name: "Minimal", description: "Thin rule, footer line" },
   { id: "bold-banner", name: "Bold Banner", description: "Full-width colored header band" },
+  { id: "corporate", name: "Corporate", description: "Two-tone side bar with bold heading" },
+  { id: "legal", name: "Legal", description: "Serif heading, double rule, formal layout" },
+  { id: "executive", name: "Executive", description: "Top monoline rule, refined contact strip" },
+  { id: "monogram", name: "Monogram", description: "Initials disc + clean stationery feel" },
 ];
 
 export const FONTS = [

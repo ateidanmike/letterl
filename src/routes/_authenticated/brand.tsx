@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, Wand2 } from "lucide-react";
+import { extractPalette } from "@/lib/letterhead/color-extract";
 
 export const Route = createFileRoute("/_authenticated/brand")({
   component: BrandPage,
@@ -18,10 +19,11 @@ export const Route = createFileRoute("/_authenticated/brand")({
 type BrandRow = {
   company_name: string; phone: string; email: string; website: string;
   address: string; logo_path: string | null; primary_color: string; accent_color: string;
+  watermark_text: string | null;
 };
 const empty: BrandRow = {
   company_name: "", phone: "", email: "", website: "", address: "",
-  logo_path: null, primary_color: "#1E40AF", accent_color: "#16A34A",
+  logo_path: null, primary_color: "#1E40AF", accent_color: "#16A34A", watermark_text: null,
 };
 
 function BrandPage() {
@@ -41,6 +43,7 @@ function BrandPage() {
           email: data.email ?? "", website: data.website ?? "",
           address: data.address ?? "", logo_path: data.logo_path,
           primary_color: data.primary_color, accent_color: data.accent_color,
+          watermark_text: (data as { watermark_text?: string | null }).watermark_text ?? null,
         });
         if (data.logo_path) {
           const { data: signed } = await supabase.storage.from("logos").createSignedUrl(data.logo_path, 3600);
@@ -60,6 +63,14 @@ function BrandPage() {
     const { data: signed } = await supabase.storage.from("logos").createSignedUrl(path, 3600);
     setLogoUrl(signed?.signedUrl ?? null);
     toast.success("Logo uploaded");
+  };
+
+  const autoExtractColors = async () => {
+    if (!logoUrl) return toast.error("Upload a logo first");
+    const palette = await extractPalette(logoUrl);
+    if (!palette) return toast.error("Could not detect colors");
+    setBrand((b) => ({ ...b, primary_color: palette.primary, accent_color: palette.accent }));
+    toast.success("Colors extracted from logo");
   };
 
   const save = async () => {
@@ -94,6 +105,11 @@ function BrandPage() {
           <Button variant="outline" onClick={() => fileRef.current?.click()}>
             <Upload className="mr-2 h-4 w-4" /> Upload logo
           </Button>
+          {logoUrl && (
+            <Button variant="ghost" onClick={autoExtractColors} className="ml-2">
+              <Wand2 className="mr-2 h-4 w-4" /> Auto-extract colors
+            </Button>
+          )}
         </CardContent>
       </Card>
       <Card className="mt-6">
@@ -109,6 +125,7 @@ function BrandPage() {
           </div>
           <ColorField label="Primary color" value={brand.primary_color} onChange={(v) => set("primary_color", v)} />
           <ColorField label="Accent color" value={brand.accent_color} onChange={(v) => set("accent_color", v)} />
+          <Field label="Watermark text (optional)" value={brand.watermark_text ?? ""} onChange={(v) => set("watermark_text", v || null)} />
         </CardContent>
       </Card>
       <div className="mt-6 flex justify-end">

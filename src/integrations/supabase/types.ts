@@ -22,11 +22,14 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_default: boolean
           logo_path: string | null
+          name: string
           phone: string | null
           primary_color: string
           updated_at: string
           user_id: string
+          watermark_text: string | null
           website: string | null
         }
         Insert: {
@@ -36,11 +39,14 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_default?: boolean
           logo_path?: string | null
+          name?: string
           phone?: string | null
           primary_color?: string
           updated_at?: string
           user_id: string
+          watermark_text?: string | null
           website?: string | null
         }
         Update: {
@@ -50,11 +56,14 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_default?: boolean
           logo_path?: string | null
+          name?: string
           phone?: string | null
           primary_color?: string
           updated_at?: string
           user_id?: string
+          watermark_text?: string | null
           website?: string | null
         }
         Relationships: []
@@ -63,13 +72,16 @@ export type Database = {
         Row: {
           accent_color: string
           body: string | null
+          brand_id: string | null
           created_at: string
+          folder: string
           font_family: string
           font_size: number
           id: string
           letter_date: string | null
           primary_color: string
           recipient: string | null
+          signature_data: string | null
           signature_name: string | null
           signature_title: string | null
           subject: string | null
@@ -81,13 +93,16 @@ export type Database = {
         Insert: {
           accent_color?: string
           body?: string | null
+          brand_id?: string | null
           created_at?: string
+          folder?: string
           font_family?: string
           font_size?: number
           id?: string
           letter_date?: string | null
           primary_color?: string
           recipient?: string | null
+          signature_data?: string | null
           signature_name?: string | null
           signature_title?: string | null
           subject?: string | null
@@ -99,13 +114,16 @@ export type Database = {
         Update: {
           accent_color?: string
           body?: string | null
+          brand_id?: string | null
           created_at?: string
+          folder?: string
           font_family?: string
           font_size?: number
           id?: string
           letter_date?: string | null
           primary_color?: string
           recipient?: string | null
+          signature_data?: string | null
           signature_name?: string | null
           signature_title?: string | null
           subject?: string | null
@@ -114,7 +132,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "letterheads_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
