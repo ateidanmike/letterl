@@ -44,6 +44,11 @@ export const LetterheadPreview = forwardRef<HTMLDivElement, Props>(
           {letter.template === "left-modern" && <LeftModernTemplate brand={brand} letter={letter} />}
           {letter.template === "minimal" && <MinimalTemplate brand={brand} letter={letter} />}
           {letter.template === "bold-banner" && <BoldBannerTemplate brand={brand} letter={letter} />}
+          {letter.template === "corporate" && <CorporateTemplate brand={brand} letter={letter} />}
+          {letter.template === "legal" && <LegalTemplate brand={brand} letter={letter} />}
+          {letter.template === "executive" && <ExecutiveTemplate brand={brand} letter={letter} />}
+          {letter.template === "monogram" && <MonogramTemplate brand={brand} letter={letter} />}
+          {brand.watermark_text && <Watermark text={brand.watermark_text} />}
         </div>
       </div>
     );
