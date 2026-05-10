@@ -83,7 +83,16 @@ function Body({ letter }: { letter: Letterhead }) {
       {(letter.signature_name || letter.signature_title) && (
         <div style={{ marginTop: 40 }}>
           <p style={{ marginBottom: 0 }}>Sincerely,</p>
-          <p style={{ marginTop: 28, fontWeight: 600 }}>{letter.signature_name}</p>
+          {letter.signature_data ? (
+            <img
+              src={letter.signature_data}
+              alt="Signature"
+              style={{ height: 56, marginTop: 8, marginBottom: -4 }}
+            />
+          ) : (
+            <div style={{ height: 28 }} />
+          )}
+          <p style={{ marginTop: 4, fontWeight: 600 }}>{letter.signature_name}</p>
           <p style={{ color: "#475569" }}>{letter.signature_title}</p>
         </div>
       )}
