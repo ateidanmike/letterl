@@ -17,6 +17,8 @@ export type Brand = {
   logo_url: string | null;
   primary_color: string;
   accent_color: string;
+  watermark_text?: string | null;
+  name?: string;
 };
 
 export type Letterhead = {
