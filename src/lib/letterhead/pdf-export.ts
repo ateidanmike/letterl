@@ -77,6 +77,7 @@ export async function exportPdf(node: HTMLElement, filename: string) {
     const imgHeight = (canvas.height * pageW) / canvas.width;
     if (imgHeight <= pageH + 0.5) {
       pdf.addImage(imgData, "PNG", 0, 0, pageW, imgHeight, undefined, "FAST");
+      drawPageNumber(pdf, 1, 1, pageW, pageH);
     } else {
       // Multi-page: slice the canvas into pageH-tall chunks and add each as its own page.
       const pxPerMm = canvas.width / pageW;
@@ -86,6 +87,8 @@ export async function exportPdf(node: HTMLElement, filename: string) {
       sliceCanvas.width = canvas.width;
       const ctx = sliceCanvas.getContext("2d")!;
       let first = true;
+      const totalPages = Math.ceil(canvas.height / sliceHeightPx);
+      let pageIndex = 0;
       while (renderedPx < canvas.height) {
         const remaining = canvas.height - renderedPx;
         const currentSlicePx = Math.min(sliceHeightPx, remaining);
@@ -107,6 +110,8 @@ export async function exportPdf(node: HTMLElement, filename: string) {
         const sliceHeightMm = currentSlicePx / pxPerMm;
         if (!first) pdf.addPage();
         pdf.addImage(sliceData, "PNG", 0, 0, pageW, sliceHeightMm, undefined, "FAST");
+        pageIndex += 1;
+        drawPageNumber(pdf, pageIndex, totalPages, pageW, pageH);
         first = false;
         renderedPx += currentSlicePx;
       }
@@ -117,4 +122,18 @@ export async function exportPdf(node: HTMLElement, filename: string) {
     node.style.transformOrigin = prevOrigin;
     overrideStyle.remove();
   }
+}
+
+function drawPageNumber(
+  pdf: jsPDF,
+  current: number,
+  total: number,
+  pageW: number,
+  pageH: number,
+) {
+  const label = `Page ${current} of ${total}`;
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(110, 110, 110);
+  pdf.text(label, pageW / 2, pageH - 6, { align: "center" });
 }
