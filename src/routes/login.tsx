@@ -67,8 +67,8 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary px-4">
-      <Card className="w-full max-w-md">
+    <div className="ambient-bg flex min-h-screen items-center justify-center px-4">
+      <Card className="w-full max-w-md glass-strong border-0">
         <CardHeader>
           <Link to="/" className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
             <FileText className="h-4 w-4" /> Letterly
