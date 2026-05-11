@@ -73,7 +73,44 @@ export async function exportPdf(node: HTMLElement, filename: string) {
     const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
-    pdf.addImage(imgData, "PNG", 0, 0, pageW, pageH, undefined, "FAST");
+    // Scale: canvas width maps to pageW. Compute total rendered height.
+    const imgHeight = (canvas.height * pageW) / canvas.width;
+    if (imgHeight <= pageH + 0.5) {
+      pdf.addImage(imgData, "PNG", 0, 0, pageW, imgHeight, undefined, "FAST");
+    } else {
+      // Multi-page: slice the canvas into pageH-tall chunks and add each as its own page.
+      const pxPerMm = canvas.width / pageW;
+      const sliceHeightPx = Math.floor(pageH * pxPerMm);
+      let renderedPx = 0;
+      const sliceCanvas = document.createElement("canvas");
+      sliceCanvas.width = canvas.width;
+      const ctx = sliceCanvas.getContext("2d")!;
+      let first = true;
+      while (renderedPx < canvas.height) {
+        const remaining = canvas.height - renderedPx;
+        const currentSlicePx = Math.min(sliceHeightPx, remaining);
+        sliceCanvas.height = currentSlicePx;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        ctx.drawImage(
+          canvas,
+          0,
+          renderedPx,
+          canvas.width,
+          currentSlicePx,
+          0,
+          0,
+          canvas.width,
+          currentSlicePx,
+        );
+        const sliceData = sliceCanvas.toDataURL("image/png");
+        const sliceHeightMm = currentSlicePx / pxPerMm;
+        if (!first) pdf.addPage();
+        pdf.addImage(sliceData, "PNG", 0, 0, pageW, sliceHeightMm, undefined, "FAST");
+        first = false;
+        renderedPx += currentSlicePx;
+      }
+    }
     pdf.save(filename.endsWith(".pdf") ? filename : `${filename}.pdf`);
   } finally {
     node.style.transform = prevTransform;
