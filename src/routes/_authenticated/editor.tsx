@@ -219,6 +219,7 @@ function Editor() {
   }
 
   return (
+    <div className="ambient-bg min-h-screen">
     <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 lg:grid-cols-[420px_1fr]">
       {/* Controls */}
       <div className="space-y-4">
@@ -397,7 +398,7 @@ function Editor() {
 
       {/* Preview */}
       <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-auto">
-        <Card>
+        <Card className="glass border-0">
           <CardContent className="flex justify-center bg-muted/30 p-6">
             <LetterheadPreview
               key={previewKey}
@@ -410,12 +411,13 @@ function Editor() {
         </Card>
       </div>
     </div>
+    </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <Card>
+    <Card className="glass border-0">
       <CardContent className="p-4">
         <h3 className="mb-3 text-sm font-semibold">{title}</h3>
         {children}
