@@ -17,8 +17,8 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { user } = useAuth();
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+    <div className="ambient-bg min-h-screen">
+      <header className="sticky top-3 z-40 mx-auto mt-3 flex max-w-6xl items-center justify-between rounded-2xl px-6 py-3 glass">
         <div className="flex items-center gap-2 text-lg font-bold">
           <FileText className="h-6 w-6 text-primary" /> Letterly
         </div>
@@ -35,7 +35,7 @@ function Index() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-12">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-muted-foreground glass">
           <Sparkles className="h-3 w-3 text-primary" /> The modern AI workspace for business correspondence
         </div>
         <h1 className="max-w-3xl text-5xl font-extrabold tracking-tight md:text-6xl">
@@ -63,7 +63,7 @@ function Index() {
           <h2 className="text-3xl font-bold">Built for every team that writes letters</h2>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
             {["HR teams", "Agencies", "Startups", "Schools", "Law firms", "NGOs"].map((u) => (
-              <div key={u} className="rounded-lg border bg-card p-4">
+              <div key={u} className="rounded-xl p-4 glass">
                 <Check className="mb-2 h-4 w-4 text-primary" />
                 <p className="font-medium">{u}</p>
               </div>
@@ -79,7 +79,7 @@ function Index() {
               { q: "Looks like we paid a designer. We didn't.", a: "Daniel, Founder" },
               { q: "Finally — letters that match our brand without Word fights.", a: "Priya, Ops Manager" },
             ].map((t, i) => (
-              <div key={i} className="rounded-xl border bg-card p-5">
+              <div key={i} className="rounded-2xl p-5 glass">
                 <div className="mb-2 flex gap-1 text-amber-500">
                   {Array.from({ length: 5 }).map((_, j) => <Star key={j} className="h-3 w-3 fill-current" />)}
                 </div>
@@ -98,7 +98,7 @@ function Index() {
               { name: "Pro", price: "$9", items: ["Unlimited letters", "AI assistant", "PDF + DOCX + PNG", "Multiple brands"], featured: true },
               { name: "Team", price: "$29", items: ["Everything in Pro", "Shared brand kit", "Priority support"] },
             ].map((p) => (
-              <div key={p.name} className={`rounded-xl border bg-card p-6 ${p.featured ? "ring-2 ring-primary" : ""}`}>
+              <div key={p.name} className={`rounded-2xl p-6 ${p.featured ? "glass-strong ring-2 ring-primary" : "glass"}`}>
                 <p className="text-sm text-muted-foreground">{p.name}</p>
                 <p className="mt-1 text-3xl font-bold">{p.price}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
                 <ul className="mt-4 space-y-2 text-sm">
@@ -118,7 +118,7 @@ function Index() {
               { q: "Can I export to Word?", a: "Yes — every letter exports to PDF, DOCX, PNG, or JPG." },
               { q: "Do I need design skills?", a: "Pick a template, drop in your logo, and Letterly handles the layout." },
             ].map((f) => (
-              <div key={f.q} className="rounded-lg border bg-card p-5">
+              <div key={f.q} className="rounded-2xl p-5 glass">
                 <p className="font-semibold">{f.q}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{f.a}</p>
               </div>
@@ -135,7 +135,7 @@ function Index() {
 
 function Feature({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border bg-card p-6">
+    <div className="rounded-2xl p-6 glass transition hover:-translate-y-0.5 hover:glass-strong">
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">{icon}</div>
       <h3 className="text-lg font-semibold">{title}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{children}</p>
