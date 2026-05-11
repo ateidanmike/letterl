@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { FileText, Sparkles, Download, Wand2, Palette, Check, Star } from "lucide-react";
+import { FileText, Sparkles, Download, Wand2, Palette, Check, Star, Users, Briefcase, Rocket, GraduationCap, Scale, HeartHandshake } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -62,10 +62,19 @@ function Index() {
         <section id="use-cases" className="mt-24">
           <h2 className="text-3xl font-bold">Built for every team that writes letters</h2>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-            {["HR teams", "Agencies", "Startups", "Schools", "Law firms", "NGOs"].map((u) => (
-              <div key={u} className="rounded-xl p-4 glass">
-                <Check className="mb-2 h-4 w-4 text-primary" />
-                <p className="font-medium">{u}</p>
+            {[
+              { name: "HR teams", icon: Users },
+              { name: "Agencies", icon: Briefcase },
+              { name: "Startups", icon: Rocket },
+              { name: "Schools", icon: GraduationCap },
+              { name: "Law firms", icon: Scale },
+              { name: "NGOs", icon: HeartHandshake },
+            ].map((u) => (
+              <div key={u.name} className="flex items-center gap-3 rounded-xl p-4 glass">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <u.icon className="h-4 w-4" />
+                </div>
+                <p className="font-medium">{u.name}</p>
               </div>
             ))}
           </div>
