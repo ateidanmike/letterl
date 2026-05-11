@@ -52,8 +52,9 @@ function Dashboard() {
   };
 
   return (
+    <div className="ambient-bg min-h-screen">
     <div className="mx-auto max-w-5xl px-6 py-10">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between rounded-2xl glass px-5 py-4">
         <h1 className="text-2xl font-bold">My letterheads</h1>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -65,13 +66,13 @@ function Dashboard() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search letterheads…"
-          className="max-w-xs"
+          className="max-w-xs glass-subtle border-0"
         />
         {(["All", ...Array.from(new Set(rows.map((r) => r.folder).filter(Boolean)))]).map((f) => (
           <button
             key={f}
             onClick={() => setFolder(f)}
-            className={`rounded-full border px-3 py-1 text-xs ${folder === f ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+            className={`rounded-full px-3 py-1 text-xs transition ${folder === f ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
           >
             {f}
           </button>
@@ -80,7 +81,7 @@ function Dashboard() {
       {loading ? (
         <p className="mt-8 text-muted-foreground">Loading…</p>
       ) : rows.length === 0 ? (
-        <Card className="mt-8">
+        <Card className="mt-8 glass border-0">
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <FileText className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">No letterheads yet.</p>
@@ -93,7 +94,7 @@ function Dashboard() {
             .filter((r) => folder === "All" || r.folder === folder)
             .filter((r) => r.title.toLowerCase().includes(search.toLowerCase()))
             .map((r) => (
-            <Card key={r.id}>
+            <Card key={r.id} className="glass border-0 transition hover:-translate-y-0.5">
               <CardContent className="flex items-center justify-between gap-4 py-4">
                 <Link to="/editor" search={{ id: r.id }} className="flex-1 text-left">
                   <div className="font-medium">{r.title}</div>
@@ -109,6 +110,7 @@ function Dashboard() {
           ))}
         </div>
       )}
+    </div>
     </div>
   );
 }
