@@ -1,7 +1,19 @@
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import type { Letterhead } from "./types";
+import { getPageMm } from "./page-size";
 
-export async function exportPdf(node: HTMLElement, filename: string) {
+export async function exportPdf(node: HTMLElement, filename: string, letter?: Letterhead) {
+  const blob = await exportPdfBlob(node, letter);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function exportPdfBlob(node: HTMLElement, letter?: Letterhead): Promise<Blob> {
   // Temporarily neutralise the preview transform so html2canvas captures
   // the full A4 page, not the scaled-down preview.
   const prevTransform = node.style.transform;
@@ -70,18 +82,24 @@ export async function exportPdf(node: HTMLElement, filename: string) {
       },
     });
     const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const fmt = letter?.page_format ?? "a4";
+    const orient = letter?.page_orientation ?? "portrait";
+    const margin = letter?.margin_mm ?? 0;
+    const [pageWmm, pageHmm] = getPageMm(fmt, orient);
+    const pdf = new jsPDF({ unit: "mm", format: [pageWmm, pageHmm], orientation: orient });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
+    const contentW = pageW - margin * 2;
+    const contentH = pageH - margin * 2;
     // Scale: canvas width maps to pageW. Compute total rendered height.
-    const imgHeight = (canvas.height * pageW) / canvas.width;
-    if (imgHeight <= pageH + 0.5) {
-      pdf.addImage(imgData, "PNG", 0, 0, pageW, imgHeight, undefined, "FAST");
+    const imgHeight = (canvas.height * contentW) / canvas.width;
+    if (imgHeight <= contentH + 0.5) {
+      pdf.addImage(imgData, "PNG", margin, margin, contentW, imgHeight, undefined, "FAST");
       drawPageNumber(pdf, 1, 1, pageW, pageH);
     } else {
-      // Multi-page: slice the canvas into pageH-tall chunks and add each as its own page.
-      const pxPerMm = canvas.width / pageW;
-      const sliceHeightPx = Math.floor(pageH * pxPerMm);
+      // Multi-page: slice the canvas into contentH-tall chunks.
+      const pxPerMm = canvas.width / contentW;
+      const sliceHeightPx = Math.floor(contentH * pxPerMm);
       let renderedPx = 0;
       const sliceCanvas = document.createElement("canvas");
       sliceCanvas.width = canvas.width;
@@ -109,14 +127,14 @@ export async function exportPdf(node: HTMLElement, filename: string) {
         const sliceData = sliceCanvas.toDataURL("image/png");
         const sliceHeightMm = currentSlicePx / pxPerMm;
         if (!first) pdf.addPage();
-        pdf.addImage(sliceData, "PNG", 0, 0, pageW, sliceHeightMm, undefined, "FAST");
+        pdf.addImage(sliceData, "PNG", margin, margin, contentW, sliceHeightMm, undefined, "FAST");
         pageIndex += 1;
         drawPageNumber(pdf, pageIndex, totalPages, pageW, pageH);
         first = false;
         renderedPx += currentSlicePx;
       }
     }
-    pdf.save(filename.endsWith(".pdf") ? filename : `${filename}.pdf`);
+    return pdf.output("blob");
   } finally {
     node.style.transform = prevTransform;
     node.style.transformOrigin = prevOrigin;
