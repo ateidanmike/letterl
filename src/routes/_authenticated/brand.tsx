@@ -63,6 +63,13 @@ function BrandPage() {
     const { data: signed } = await supabase.storage.from("logos").createSignedUrl(path, 3600);
     setLogoUrl(signed?.signedUrl ?? null);
     toast.success("Logo uploaded");
+    if (signed?.signedUrl) {
+      const palette = await extractPalette(signed.signedUrl);
+      if (palette) {
+        setBrand((b) => ({ ...b, primary_color: palette.primary, accent_color: palette.accent }));
+        toast.success("Colors auto-updated from logo");
+      }
+    }
   };
 
   const autoExtractColors = async () => {
