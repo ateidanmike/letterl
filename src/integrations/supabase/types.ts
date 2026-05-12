@@ -68,6 +68,47 @@ export type Database = {
         }
         Relationships: []
       }
+      letterhead_shares: {
+        Row: {
+          allow_download: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          letterhead_id: string
+          token: string
+          user_id: string
+          view_count: number
+        }
+        Insert: {
+          allow_download?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          letterhead_id: string
+          token: string
+          user_id: string
+          view_count?: number
+        }
+        Update: {
+          allow_download?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          letterhead_id?: string
+          token?: string
+          user_id?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "letterhead_shares_letterhead_id_fkey"
+            columns: ["letterhead_id"]
+            isOneToOne: false
+            referencedRelation: "letterheads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       letterheads: {
         Row: {
           accent_color: string
@@ -79,8 +120,12 @@ export type Database = {
           font_size: number
           id: string
           letter_date: string | null
+          margin_mm: number
+          page_format: string
+          page_orientation: string
           primary_color: string
           recipient: string | null
+          show_qr: boolean
           signature_data: string | null
           signature_name: string | null
           signature_title: string | null
@@ -100,8 +145,12 @@ export type Database = {
           font_size?: number
           id?: string
           letter_date?: string | null
+          margin_mm?: number
+          page_format?: string
+          page_orientation?: string
           primary_color?: string
           recipient?: string | null
+          show_qr?: boolean
           signature_data?: string | null
           signature_name?: string | null
           signature_title?: string | null
@@ -121,8 +170,12 @@ export type Database = {
           font_size?: number
           id?: string
           letter_date?: string | null
+          margin_mm?: number
+          page_format?: string
+          page_orientation?: string
           primary_color?: string
           recipient?: string | null
+          show_qr?: boolean
           signature_data?: string | null
           signature_name?: string | null
           signature_title?: string | null
@@ -160,12 +213,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_templates: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          snapshot: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          snapshot: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          snapshot?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_shared_letterhead: { Args: { _token: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never

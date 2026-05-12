@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Sparkles, Save, Download, ArrowLeft, RotateCcw } from "lucide-react";
+import { Sparkles, Save, Download, ArrowLeft, RotateCcw, Share2, BookmarkPlus } from "lucide-react";
 import { LetterheadPreview } from "@/components/letterhead/LetterheadPreview";
 import { AiPanel } from "@/components/letterhead/AiPanel";
 import { SignaturePad } from "@/components/letterhead/SignaturePad";
@@ -31,13 +31,19 @@ import {
   DEFAULT_LETTERHEAD,
   FONTS,
   TEMPLATES,
+  PAGE_FORMATS,
+  THEME_PRESETS,
   type Brand,
   type Letterhead,
   type TemplateId,
+  type PageFormat,
+  type PageOrientation,
 } from "@/lib/letterhead/types";
 import { exportPdf } from "@/lib/letterhead/pdf-export";
 import { exportDocx } from "@/lib/letterhead/docx-export";
 import { exportPng } from "@/lib/letterhead/png-export";
+import { downloadHtmlEmail } from "@/lib/letterhead/html-email";
+import { createShareLink, shareUrl } from "@/lib/letterhead/share";
 
 const searchSchema = z.object({ id: z.string().optional() });
 
@@ -70,6 +76,9 @@ function Editor() {
   const [saving, setSaving] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [previousBody, setPreviousBody] = useState<string | null>(null);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [shareExpiry, setShareExpiry] = useState<string>("");
+  const [shareAllowDl, setShareAllowDl] = useState(true);
 
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -124,6 +133,11 @@ function Editor() {
           signature_title: letterRow.signature_title ?? "",
           signature_data: (letterRow as { signature_data?: string | null }).signature_data ?? null,
           folder: (letterRow as { folder?: string }).folder ?? "Inbox",
+          page_format: ((letterRow as { page_format?: PageFormat }).page_format ?? "a4"),
+          page_orientation: ((letterRow as { page_orientation?: PageOrientation }).page_orientation ?? "portrait"),
+          margin_mm: (letterRow as { margin_mm?: number }).margin_mm ?? 18,
+          show_qr: (letterRow as { show_qr?: boolean }).show_qr ?? false,
+          brand_id: (letterRow as { brand_id?: string | null }).brand_id ?? null,
         });
       }
       setLoaded(true);
@@ -186,7 +200,7 @@ function Editor() {
     if (!previewRef.current) return;
     toast.message("Generating PDF…");
     try {
-      await exportPdf(previewRef.current, letter.title || "letterhead");
+      await exportPdf(previewRef.current, letter.title || "letterhead", letter);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "PDF export failed");
     }
@@ -209,6 +223,57 @@ function Editor() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Image export failed");
     }
+  };
+
+  const downloadHtml = () => {
+    try {
+      downloadHtmlEmail(brand, letter, letter.title || "letterhead");
+      toast.success("HTML email downloaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "HTML export failed");
+    }
+  };
+
+  const saveAsTemplate = async () => {
+    if (!user) return;
+    const name = window.prompt("Template name", letter.title || "My template");
+    if (!name) return;
+    const { error } = await supabase.from("user_templates").insert({
+      user_id: user.id,
+      name,
+      snapshot: JSON.parse(JSON.stringify(letter)),
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Template saved");
+  };
+
+  const generateShare = async () => {
+    if (!user || !id) return toast.error("Save the letter first");
+    try {
+      const url = await createShareLink({
+        letterheadId: id,
+        userId: user.id,
+        expiresAt: shareExpiry ? new Date(shareExpiry).toISOString() : null,
+        allowDownload: shareAllowDl,
+      });
+      setShareLink(url);
+      await navigator.clipboard.writeText(url).catch(() => {});
+      toast.success("Share link copied to clipboard");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not create share link");
+    }
+  };
+
+  const applyTheme = (themeId: string) => {
+    const t = THEME_PRESETS.find((x) => x.id === themeId);
+    if (!t) return;
+    setLetter((l) => ({
+      ...l,
+      template: t.template,
+      font_family: t.font_family,
+      primary_color: t.primary_color,
+      accent_color: t.accent_color,
+    }));
   };
 
   const previewScale = 0.6;
@@ -242,6 +307,10 @@ function Editor() {
                 <DropdownMenuItem onClick={downloadDocx}>Download DOCX</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => downloadPng("image/png")}>Download PNG</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => downloadPng("image/jpeg")}>Download JPG</DropdownMenuItem>
+                <DropdownMenuItem onClick={downloadHtml}>Download HTML email</DropdownMenuItem>
+                <DropdownMenuItem onClick={saveAsTemplate}>
+                  <BookmarkPlus className="mr-2 h-4 w-4" /> Save as template
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -262,6 +331,21 @@ function Editor() {
           />
         </Section>
 
+        <Section title="Themes">
+          <div className="flex flex-wrap gap-2">
+            {THEME_PRESETS.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => applyTheme(t.id)}
+                className="rounded-full border px-3 py-1 text-xs hover:border-foreground/40"
+                style={{ borderColor: t.primary_color, color: t.primary_color }}
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
+        </Section>
+
         <Section title="Template">
           <div className="grid grid-cols-2 gap-2">
             {TEMPLATES.map((t) => (
@@ -278,6 +362,65 @@ function Editor() {
                 <div className="text-muted-foreground">{t.description}</div>
               </button>
             ))}
+          </div>
+        </Section>
+
+        <Section title="Page setup">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Format</Label>
+              <Select value={letter.page_format ?? "a4"} onValueChange={(v) => set("page_format", v as PageFormat)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PAGE_FORMATS.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Orientation</Label>
+              <Select value={letter.page_orientation ?? "portrait"} onValueChange={(v) => set("page_orientation", v as PageOrientation)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="portrait">Portrait</SelectItem>
+                  <SelectItem value="landscape">Landscape</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Margin: {letter.margin_mm ?? 18} mm</Label>
+              <Slider min={0} max={40} step={1} value={[letter.margin_mm ?? 18]} onValueChange={(v) => set("margin_mm", v[0])} />
+            </div>
+            <label className="col-span-2 flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={!!letter.show_qr}
+                onChange={(e) => set("show_qr", e.target.checked)}
+              />
+              Show QR code linking to share URL
+            </label>
+          </div>
+        </Section>
+
+        <Section title="Share link">
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Expires (optional)</Label>
+                <Input type="datetime-local" value={shareExpiry} onChange={(e) => setShareExpiry(e.target.value)} />
+              </div>
+              <label className="flex items-end gap-2 text-xs">
+                <input type="checkbox" checked={shareAllowDl} onChange={(e) => setShareAllowDl(e.target.checked)} />
+                Allow PDF download
+              </label>
+            </div>
+            <Button size="sm" variant="secondary" onClick={generateShare} className="w-full">
+              <Share2 className="mr-2 h-4 w-4" /> Generate share link
+            </Button>
+            {shareLink && (
+              <Input readOnly value={shareLink} onClick={(e) => (e.target as HTMLInputElement).select()} className="text-xs" />
+            )}
           </div>
         </Section>
 
@@ -406,6 +549,7 @@ function Editor() {
               brand={brand}
               letter={letter}
               scale={previewScale}
+              qrUrl={id ? shareUrl("preview") : null}
             />
           </CardContent>
         </Card>

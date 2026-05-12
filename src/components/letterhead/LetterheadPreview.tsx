@@ -1,12 +1,15 @@
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import { Phone, Mail, Globe } from "lucide-react";
 import type { Brand, Letterhead } from "@/lib/letterhead/types";
+import { makeQrDataUrl } from "@/lib/letterhead/qr";
 
 type Props = {
   brand: Brand;
   letter: Letterhead;
   /** Scale to fit container; 1 = full A4. */
   scale?: number;
+  /** When provided, a QR pointing to this URL is rendered if letter.show_qr is true. */
+  qrUrl?: string | null;
 };
 
 // A4 at 96dpi: 794 x 1123 px
@@ -14,7 +17,17 @@ const A4_W = 794;
 const A4_H = 1123;
 
 export const LetterheadPreview = forwardRef<HTMLDivElement, Props>(
-  function LetterheadPreview({ brand, letter, scale = 1 }, ref) {
+  function LetterheadPreview({ brand, letter, scale = 1, qrUrl }, ref) {
+    const [qrData, setQrData] = useState<string | null>(null);
+    useEffect(() => {
+      let cancelled = false;
+      if (letter.show_qr && qrUrl) {
+        makeQrDataUrl(qrUrl, 96).then((d) => { if (!cancelled) setQrData(d); });
+      } else {
+        setQrData(null);
+      }
+      return () => { cancelled = true; };
+    }, [letter.show_qr, qrUrl]);
     return (
       <div
         style={{
@@ -49,6 +62,11 @@ export const LetterheadPreview = forwardRef<HTMLDivElement, Props>(
           {letter.template === "executive" && <ExecutiveTemplate brand={brand} letter={letter} />}
           {letter.template === "monogram" && <MonogramTemplate brand={brand} letter={letter} />}
           {brand.watermark_text && <Watermark text={brand.watermark_text} />}
+          {qrData && (
+            <div style={{ position: "absolute", bottom: 16, right: 16, background: "white", padding: 4, border: "1px solid #e2e8f0", borderRadius: 4, zIndex: 2 }}>
+              <img src={qrData} alt="QR" style={{ width: 64, height: 64, display: "block" }} />
+            </div>
+          )}
         </div>
       </div>
     );
