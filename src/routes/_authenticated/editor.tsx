@@ -241,7 +241,7 @@ function Editor() {
     const { error } = await supabase.from("user_templates").insert({
       user_id: user.id,
       name,
-      snapshot: letter as unknown as Record<string, unknown>,
+      snapshot: JSON.parse(JSON.stringify(letter)),
     });
     if (error) toast.error(error.message);
     else toast.success("Template saved");
