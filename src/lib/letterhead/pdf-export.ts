@@ -135,5 +135,5 @@ function drawPageNumber(
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9);
   pdf.setTextColor(110, 110, 110);
-  pdf.text(label, pageW / 2, pageH - 6, { align: "center" });
+  pdf.text(label, pageW - 8, pageH - 4, { align: "right" });
 }
