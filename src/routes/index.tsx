@@ -8,8 +8,8 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Letterly — AI-powered letterhead generator" },
-      { name: "description", content: "Draft, brand and export professional business letters in seconds with AI." },
+      { title: "Letterly — Create stunning business documents in seconds" },
+      { name: "description", content: "Letterheads, invoices, receipts, quotations and delivery notes — beautifully branded and AI-drafted in seconds." },
     ],
   }),
 });
