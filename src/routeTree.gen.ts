@@ -13,6 +13,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedEditorRouteImport } from './routes/_authenticated/editor'
+import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedDocumentEditorRouteImport } from './routes/_authenticated/document-editor'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBrandRouteImport } from './routes/_authenticated/brand'
 
@@ -35,6 +37,17 @@ const AuthenticatedEditorRoute = AuthenticatedEditorRouteImport.update({
   path: '/editor',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDocumentEditorRoute =
+  AuthenticatedDocumentEditorRouteImport.update({
+    id: '/document-editor',
+    path: '/document-editor',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -51,6 +64,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/brand': typeof AuthenticatedBrandRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/document-editor': typeof AuthenticatedDocumentEditorRoute
+  '/documents': typeof AuthenticatedDocumentsRoute
   '/editor': typeof AuthenticatedEditorRoute
 }
 export interface FileRoutesByTo {
@@ -58,6 +73,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/brand': typeof AuthenticatedBrandRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/document-editor': typeof AuthenticatedDocumentEditorRoute
+  '/documents': typeof AuthenticatedDocumentsRoute
   '/editor': typeof AuthenticatedEditorRoute
 }
 export interface FileRoutesById {
@@ -67,13 +84,29 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/brand': typeof AuthenticatedBrandRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/document-editor': typeof AuthenticatedDocumentEditorRoute
+  '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/editor': typeof AuthenticatedEditorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/brand' | '/dashboard' | '/editor'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/brand'
+    | '/dashboard'
+    | '/document-editor'
+    | '/documents'
+    | '/editor'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/brand' | '/dashboard' | '/editor'
+  to:
+    | '/'
+    | '/login'
+    | '/brand'
+    | '/dashboard'
+    | '/document-editor'
+    | '/documents'
+    | '/editor'
   id:
     | '__root__'
     | '/'
@@ -81,6 +114,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authenticated/brand'
     | '/_authenticated/dashboard'
+    | '/_authenticated/document-editor'
+    | '/_authenticated/documents'
     | '/_authenticated/editor'
   fileRoutesById: FileRoutesById
 }
@@ -120,6 +155,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEditorRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/documents': {
+      id: '/_authenticated/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/document-editor': {
+      id: '/_authenticated/document-editor'
+      path: '/document-editor'
+      fullPath: '/document-editor'
+      preLoaderRoute: typeof AuthenticatedDocumentEditorRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -140,12 +189,16 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedBrandRoute: typeof AuthenticatedBrandRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDocumentEditorRoute: typeof AuthenticatedDocumentEditorRoute
+  AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedEditorRoute: typeof AuthenticatedEditorRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBrandRoute: AuthenticatedBrandRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDocumentEditorRoute: AuthenticatedDocumentEditorRoute,
+  AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedEditorRoute: AuthenticatedEditorRoute,
 }
 

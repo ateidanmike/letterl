@@ -34,6 +34,7 @@ function AuthLayout() {
             </Link>
             <nav className="flex gap-1">
               <NavLink to="/dashboard">Letterheads</NavLink>
+              <NavLink to="/documents">Documents</NavLink>
               <NavLink to="/brand">Brand</NavLink>
             </nav>
           </div>

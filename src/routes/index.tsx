@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { FileText, Sparkles, Download, Wand2, Palette, Check, Star, Users, Briefcase, Rocket, GraduationCap, Scale, HeartHandshake } from "lucide-react";
+import { FileText, Sparkles, Download, Wand2, Palette, Check, Star, Users, Briefcase, Rocket, GraduationCap, Scale, HeartHandshake, Receipt, FileSpreadsheet, Truck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -8,8 +8,8 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Letterly — AI-powered letterhead generator" },
-      { name: "description", content: "Draft, brand and export professional business letters in seconds with AI." },
+      { title: "Letterly — Create stunning business documents in seconds" },
+      { name: "description", content: "Letterheads, invoices, receipts, quotations and delivery notes — beautifully branded and AI-drafted in seconds." },
     ],
   }),
 });
@@ -39,19 +39,43 @@ function Index() {
           <Sparkles className="h-3 w-3 text-primary" /> The modern AI workspace for business correspondence
         </div>
         <h1 className="max-w-3xl text-5xl font-extrabold tracking-tight md:text-6xl">
-          Stunning business letters,{" "}
-          <span className="bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">written by AI in seconds</span>
+          Create stunning business documents{" "}
+          <span className="bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">in seconds</span>
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          Drop in your logo, describe what you want to say, and Letterly drafts a polished letter on
-          your branded letterhead — with tone control, signatures, and one-click PDF, Word, PNG or JPG export.
+          Letterheads, invoices, receipts, quotations and delivery notes — beautifully branded with
+          your logo and colors. Drafted by AI, ready to send as PDF, Word, PNG or JPG.
         </p>
         <div className="mt-10 flex flex-wrap gap-3">
           <Button size="lg" asChild>
             <Link to={user ? "/dashboard" : "/login"}>Start creating <Sparkles className="ml-2 h-4 w-4" /></Link>
           </Button>
-          <Button size="lg" variant="outline" asChild><a href="#use-cases">See use cases</a></Button>
+          <Button size="lg" variant="outline" asChild><a href="#documents">See document types</a></Button>
         </div>
+
+        <section id="documents" className="mt-20">
+          <h2 className="text-3xl font-bold">Every document your business needs</h2>
+          <p className="mt-2 text-muted-foreground">One workspace. Letterheads plus four polished business document types.</p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+            {[
+              { icon: FileText, name: "Letters", desc: "AI-drafted letterheads with your brand." },
+              { icon: Receipt, name: "Invoices", desc: "Bill clients with auto-calculated totals & tax." },
+              { icon: FileSpreadsheet, name: "Quotations", desc: "Send price estimates that win deals." },
+              { icon: Truck, name: "Delivery notes", desc: "Confirm shipments with itemised lists." },
+            ].map((d) => (
+              <div key={d.name} className="rounded-2xl p-5 glass transition hover:-translate-y-0.5">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <d.icon className="h-4 w-4" />
+                </div>
+                <h3 className="font-semibold">{d.name}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{d.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 text-sm text-muted-foreground">
+            Plus receipts to confirm payments — all under one roof.
+          </div>
+        </section>
 
         <div className="mt-20 grid gap-6 md:grid-cols-3">
           <Feature icon={<Wand2 />} title="AI writing assistant">Generate, rewrite, shorten, expand, simplify or translate any letter — with tones from formal to friendly.</Feature>

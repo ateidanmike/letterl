@@ -68,6 +68,90 @@ export type Database = {
         }
         Relationships: []
       }
+      business_documents: {
+        Row: {
+          accent_color: string
+          brand_id: string | null
+          created_at: string
+          currency: string
+          discount: number
+          doc_number: string
+          doc_type: string
+          due_date: string | null
+          from_party: Json
+          id: string
+          issue_date: string | null
+          items: Json
+          notes: string
+          primary_color: string
+          signature_data: string | null
+          signature_name: string
+          signature_title: string
+          status: string
+          tax_rate: number
+          template: string
+          terms: string
+          title: string
+          to_party: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string
+          brand_id?: string | null
+          created_at?: string
+          currency?: string
+          discount?: number
+          doc_number?: string
+          doc_type?: string
+          due_date?: string | null
+          from_party?: Json
+          id?: string
+          issue_date?: string | null
+          items?: Json
+          notes?: string
+          primary_color?: string
+          signature_data?: string | null
+          signature_name?: string
+          signature_title?: string
+          status?: string
+          tax_rate?: number
+          template?: string
+          terms?: string
+          title?: string
+          to_party?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accent_color?: string
+          brand_id?: string | null
+          created_at?: string
+          currency?: string
+          discount?: number
+          doc_number?: string
+          doc_type?: string
+          due_date?: string | null
+          from_party?: Json
+          id?: string
+          issue_date?: string | null
+          items?: Json
+          notes?: string
+          primary_color?: string
+          signature_data?: string | null
+          signature_name?: string
+          signature_title?: string
+          status?: string
+          tax_rate?: number
+          template?: string
+          terms?: string
+          title?: string
+          to_party?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       letterhead_shares: {
         Row: {
           allow_download: boolean
