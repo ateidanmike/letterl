@@ -42,21 +42,28 @@ function DocumentEditor() {
       const { data, error } = await supabase
         .from("business_documents").select("*").eq("id", id).single();
       if (error) toast.error(error.message);
-      else if (data) {
+      const raw = data as unknown as Record<string, unknown> | null;
+      if (raw) {
+        const items = Array.isArray(raw.items) ? (raw.items as LineItem[]) : [];
         setDoc({
           ...DEFAULT_DOC,
-          ...(data as unknown as BusinessDoc),
-          items: ((data as { items?: LineItem[] }).items?.length ? (data as { items: LineItem[] }).items : DEFAULT_DOC.items),
-          from_party: { ...DEFAULT_DOC.from_party, ...(data as { from_party?: object }).from_party },
-          to_party: { ...DEFAULT_DOC.to_party, ...(data as { to_party?: object }).to_party },
+          ...(raw as unknown as BusinessDoc),
+          items: items.length ? items : DEFAULT_DOC.items,
+          from_party: { ...DEFAULT_DOC.from_party, ...((raw.from_party as object) ?? {}) },
+          to_party: { ...DEFAULT_DOC.to_party, ...((raw.to_party as object) ?? {}) },
         });
       }
       // load brand for logo + defaults
       const { data: brand } = await supabase.from("brands").select("*").eq("user_id", user.id).maybeSingle();
-      if (brand && !data) {
+      let logoUrl: string | null = null;
+      if (brand?.logo_path) {
+        const { data: signed } = await supabase.storage.from("logos").createSignedUrl(brand.logo_path, 3600);
+        logoUrl = signed?.signedUrl ?? null;
+      }
+      if (brand && !raw) {
         setDoc((d) => ({
           ...d,
-          logo_url: brand.logo_url ?? null,
+          logo_url: logoUrl,
           primary_color: brand.primary_color ?? d.primary_color,
           accent_color: brand.accent_color ?? d.accent_color,
           from_party: {
@@ -66,8 +73,8 @@ function DocumentEditor() {
             phone: brand.phone ?? "",
           },
         }));
-      } else if (brand && data) {
-        setDoc((d) => ({ ...d, logo_url: d.logo_url ?? brand.logo_url ?? null }));
+      } else if (brand && raw) {
+        setDoc((d) => ({ ...d, logo_url: d.logo_url ?? logoUrl }));
       }
       setLoaded(true);
     })();
