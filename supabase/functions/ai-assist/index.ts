@@ -6,6 +6,14 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+type GeminiPart = { text?: string };
+type GeminiResponse = {
+  candidates?: { content?: { parts?: GeminiPart[] } }[];
+};
+
 type Action =
   | "clean"
   | "generate"
@@ -38,6 +46,15 @@ const SYSTEM: Record<Action, (opts: Record<string, string>) => string> = {
     "Suggest 5 concise, professional subject lines for the following business letter. Return ONLY a JSON array of 5 strings, no commentary.",
 };
 
+function geminiText(data: GeminiResponse): string {
+  return (
+    data.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text ?? "")
+      .join("")
+      .trim() ?? ""
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -51,8 +68,8 @@ Deno.serve(async (req) => {
 
     if (!SYSTEM[action]) return json({ error: "Unknown action" }, 400);
 
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!apiKey) return json({ error: "AI not configured" }, 500);
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!apiKey) return json({ error: "Gemini API key is not configured" }, 500);
 
     const userContent =
       action === "generate"
@@ -60,27 +77,37 @@ Deno.serve(async (req) => {
         : text;
     if (!userContent.trim()) return json({ error: "Missing input" }, 400);
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch(GEMINI_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: SYSTEM[action]({ tone, language }) },
-          { role: "user", content: userContent },
+        systemInstruction: {
+          parts: [{ text: SYSTEM[action]({ tone, language }) }],
+        },
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: userContent }],
+          },
         ],
+        generationConfig: {
+          temperature: action === "generate" ? 0.7 : 0.2,
+        },
       }),
     });
 
     if (res.status === 429) return json({ error: "Rate limit reached. Try again shortly." }, 429);
-    if (res.status === 402) return json({ error: "AI credits exhausted." }, 402);
+    if (res.status === 401 || res.status === 403) {
+      return json({ error: "Gemini API key was rejected." }, 500);
+    }
     if (!res.ok) {
-      console.error("AI gateway error", res.status, await res.text());
-      return json({ error: "AI gateway error" }, 500);
+      console.error("Gemini API error", res.status, await res.text());
+      return json({ error: "Gemini API error" }, 500);
     }
 
-    const data = await res.json();
-    const content: string = data?.choices?.[0]?.message?.content?.trim() ?? "";
+    const data = (await res.json()) as GeminiResponse;
+    const content = geminiText(data);
+    if (!content) return json({ error: "Gemini returned no text" }, 500);
 
     if (action === "subject") {
       try {

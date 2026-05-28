@@ -1,4 +1,7 @@
-project_id = "pqyplzcyqjfjmtlqpffn"
+project_id = "nvwqrvrmisrtmlptluds"
 
 [functions.clean-text]
+verify_jwt = true
+
+[functions.ai-assist]
 verify_jwt = true
