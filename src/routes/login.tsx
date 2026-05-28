@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,16 +53,18 @@ function LoginPage() {
     else toast.success("Check your email to confirm your account.");
   };
 
-  const google = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/dashboard",
-    });
-    if (result.error) {
-      toast.error(result.error.message ?? "Google sign-in failed");
+  const forgotPassword = async () => {
+    if (!email.trim()) {
+      toast.error("Enter your email first.");
       return;
     }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard" });
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/login",
+    });
+    setLoading(false);
+    if (error) toast.error(error.message);
+    else toast.success("Password reset email sent.");
   };
 
   return (
@@ -76,12 +77,6 @@ function LoginPage() {
           <CardTitle>Welcome</CardTitle>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" className="w-full" onClick={google}>
-            Continue with Google
-          </Button>
-          <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="h-px flex-1 bg-border" /> or <div className="h-px flex-1 bg-border" />
-          </div>
           <Tabs defaultValue="signin">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign in</TabsTrigger>
@@ -93,6 +88,15 @@ function LoginPage() {
                 <Field label="Password" value={password} onChange={setPassword} type="password" />
                 <Button className="w-full" disabled={loading}>
                   Sign in
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={forgotPassword}
+                  disabled={loading}
+                >
+                  Forgot password?
                 </Button>
               </form>
             </TabsContent>
