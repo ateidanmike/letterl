@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Letterly — Create stunning business documents in seconds" },
+      { title: "Zuridoc — Create stunning business documents in seconds" },
       { name: "description", content: "Letterheads, invoices, receipts, quotations and delivery notes — beautifully branded and AI-drafted in seconds." },
     ],
   }),
@@ -20,7 +20,7 @@ function Index() {
     <div className="ambient-bg min-h-screen">
       <header className="sticky top-3 z-40 mx-auto mt-3 flex max-w-6xl items-center justify-between rounded-2xl px-6 py-3 glass">
         <div className="flex items-center gap-2 text-lg font-bold">
-          <FileText className="h-6 w-6 text-primary" /> Letterly
+          <FileText className="h-6 w-6 text-primary" /> Zuridoc
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -149,7 +149,7 @@ function Index() {
               { q: "Does AI replace my writing?", a: "No — it drafts, polishes, or translates on demand. You stay in full control." },
               { q: "Is my data private?", a: "Letters and brand assets are scoped to your account. Logos are stored privately." },
               { q: "Can I export to Word?", a: "Yes — every letter exports to PDF, DOCX, PNG, or JPG." },
-              { q: "Do I need design skills?", a: "Pick a template, drop in your logo, and Letterly handles the layout." },
+              { q: "Do I need design skills?", a: "Pick a template, drop in your logo, and Zuridoc handles the layout." },
             ].map((f) => (
               <div key={f.q} className="rounded-2xl p-5 glass">
                 <p className="font-semibold">{f.q}</p>
@@ -160,7 +160,7 @@ function Index() {
         </section>
       </main>
       <footer className="border-t py-8 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Letterly · Crafted for teams that care about how they write.
+        © {new Date().getFullYear()} Zuridoc · Crafted for teams that care about how they write.
       </footer>
     </div>
   );

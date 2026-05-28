@@ -13,7 +13,7 @@ import { FileText } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
-  head: () => ({ meta: [{ title: "Sign in — Letterly" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Zuridoc" }] }),
 });
 
 function LoginPage() {
@@ -71,7 +71,7 @@ function LoginPage() {
       <Card className="w-full max-w-md glass-strong border-0">
         <CardHeader>
           <Link to="/" className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-            <FileText className="h-4 w-4" /> Letterly
+            <FileText className="h-4 w-4" /> Zuridoc
           </Link>
           <CardTitle>Welcome</CardTitle>
         </CardHeader>
