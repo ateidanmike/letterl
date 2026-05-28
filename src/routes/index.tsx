@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { FileText, Sparkles, Download, Wand2, Palette, Check, Star, Users, Briefcase, Rocket, GraduationCap, Scale, HeartHandshake, Receipt, FileSpreadsheet, Truck } from "lucide-react";
+import { FileText, Sparkles, Download, Wand2, Palette, Star, Users, Briefcase, Rocket, GraduationCap, Scale, HeartHandshake, Receipt, FileSpreadsheet, Truck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -118,25 +118,6 @@ function Index() {
                 </div>
                 <p className="text-sm">"{t.q}"</p>
                 <p className="mt-3 text-xs text-muted-foreground">— {t.a}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-24">
-          <h2 className="text-3xl font-bold">Simple pricing</h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {[
-              { name: "Free", price: "$0", items: ["3 letters / month", "All templates", "PDF export"] },
-              { name: "Pro", price: "$9", items: ["Unlimited letters", "AI assistant", "PDF + DOCX + PNG", "Multiple brands"], featured: true },
-              { name: "Team", price: "$29", items: ["Everything in Pro", "Shared brand kit", "Priority support"] },
-            ].map((p) => (
-              <div key={p.name} className={`rounded-2xl p-6 ${p.featured ? "glass-strong ring-2 ring-primary" : "glass"}`}>
-                <p className="text-sm text-muted-foreground">{p.name}</p>
-                <p className="mt-1 text-3xl font-bold">{p.price}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
-                <ul className="mt-4 space-y-2 text-sm">
-                  {p.items.map((i) => <li key={i} className="flex items-center gap-2"><Check className="h-3 w-3 text-primary" /> {i}</li>)}
-                </ul>
               </div>
             ))}
           </div>
