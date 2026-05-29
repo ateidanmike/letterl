@@ -4,6 +4,8 @@ project_id = "nvwqrvrmisrtmlptluds"
 enabled = true
 site_url = "https://zuridoc.com"
 additional_redirect_urls = [
+  "https://www.zuridoc.com/auth/confirm",
+  "https://www.zuridoc.com/**",
   "https://zuridoc.com/auth/confirm",
   "https://zuridoc.com/**",
   "https://zuridoc.danmikeatei952.workers.dev/**",
