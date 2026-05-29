@@ -44,6 +44,7 @@ import { exportDocx } from "@/lib/letterhead/docx-export";
 import { exportPng } from "@/lib/letterhead/png-export";
 import { downloadHtmlEmail } from "@/lib/letterhead/html-email";
 import { createShareLink, shareUrl } from "@/lib/letterhead/share";
+import { invokeEdgeFunction } from "@/lib/edge-functions";
 
 const searchSchema = z.object({ id: z.string().optional() });
 
@@ -173,21 +174,26 @@ function Editor() {
   const cleanText = async () => {
     if (!letter.body.trim()) return toast.error("Add some text first");
     setCleaning(true);
-    const { data, error } = await supabase.functions.invoke("clean-text", {
-      body: { text: letter.body },
-    });
-    setCleaning(false);
-    if (error) {
-      toast.error(error.message ?? "AI clean-up failed");
-      return;
+    try {
+      const data = await invokeEdgeFunction<{ cleaned?: string; error?: string }>("clean-text", {
+        body: { text: letter.body },
+      });
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      if (!data?.cleaned) {
+        toast.error("AI clean-up returned no text.");
+        return;
+      }
+      setPreviousBody(letter.body);
+      set("body", data.cleaned);
+      toast.success("Text cleaned. You can revert if needed.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "AI clean-up failed");
+    } finally {
+      setCleaning(false);
     }
-    if (data?.error) {
-      toast.error(data.error);
-      return;
-    }
-    setPreviousBody(letter.body);
-    set("body", data.cleaned);
-    toast.success("Text cleaned. You can revert if needed.");
   };
 
   const revert = () => {

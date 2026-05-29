@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -8,6 +7,7 @@ import {
 } from "@/components/ui/select";
 import { Sparkles, Wand2, Type, Minimize2, Maximize2, Languages } from "lucide-react";
 import { toast } from "sonner";
+import { invokeEdgeFunction } from "@/lib/edge-functions";
 
 const TONES = ["formal", "friendly", "executive", "legal", "apologetic", "persuasive", "concise"];
 const LANGS = ["English", "Spanish", "French", "German", "Portuguese", "Italian", "Arabic", "Swahili", "Hindi", "Chinese"];
@@ -27,15 +27,24 @@ export function AiPanel({ body, onApplyBody, onSubject }: Props) {
 
   const call = async (action: string, payload: Record<string, unknown> = {}) => {
     setBusy(action);
-    const { data, error } = await supabase.functions.invoke("ai-assist", {
-      body: { action, tone, language, text: body, ...payload },
-    });
-    setBusy(null);
-    if (error || data?.error) {
-      toast.error(data?.error ?? error?.message ?? "AI failed");
+    try {
+      const data = await invokeEdgeFunction<{ error?: string } & Record<string, unknown>>(
+        "ai-assist",
+        {
+          body: { action, tone, language, text: body, ...payload },
+        },
+      );
+      if (data?.error) {
+        toast.error(data.error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "AI failed");
       return null;
+    } finally {
+      setBusy(null);
     }
-    return data;
   };
 
   const generate = async () => {
