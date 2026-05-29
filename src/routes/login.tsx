@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
-import { FileText, KeyRound, MailCheck, RotateCcw, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, FileText, MailCheck, RotateCcw, ShieldCheck } from "lucide-react";
 import { z } from "zod";
 
 const searchSchema = z.object({
@@ -25,6 +25,9 @@ export const Route = createFileRoute("/login")({
 });
 
 type AuthMode = "signin" | "signup";
+type ViewState = "login" | "forgot-password" | "verify-otp" | "new-password";
+
+const OTP_LENGTH = 5;
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -32,30 +35,30 @@ function LoginPage() {
   const { reset } = Route.useSearch();
 
   const [authMode, setAuthMode] = useState<AuthMode>("signin");
+  const [viewState, setViewState] = useState<ViewState>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [pendingEmail, setPendingEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
-  const [showRecovery, setShowRecovery] = useState(reset === "1");
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [recoveryCode, setRecoveryCode] = useState("");
   const [recoveryPassword, setRecoveryPassword] = useState("");
+  const [recoveryPasswordConfirm, setRecoveryPasswordConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
   const authRedirectTo = getAuthRedirectTo();
-  const canResetFromSession = reset === "1" && !!user;
 
   useEffect(() => {
     if (reset === "1") {
       setAuthMode("signin");
-      setShowRecovery(true);
+      setViewState("new-password");
     }
   }, [reset]);
 
   useEffect(() => {
-    if (user && !showRecovery) navigate({ to: "/dashboard" });
-  }, [user, showRecovery, navigate]);
+    if (user && viewState === "login" && reset !== "1") navigate({ to: "/dashboard" });
+  }, [user, viewState, reset, navigate]);
 
   const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,13 +106,35 @@ function LoginPage() {
     }
   };
 
+  const goToLogin = () => {
+    setViewState("login");
+    setAuthMode("signin");
+    setRecoveryCode("");
+    setRecoveryPassword("");
+    setRecoveryPasswordConfirm("");
+  };
+
+  const goToForgotPassword = () => {
+    setAuthMode("signin");
+    setViewState("forgot-password");
+    setRecoveryEmail((current) => current || email);
+    setRecoveryCode("");
+    setRecoveryPassword("");
+    setRecoveryPasswordConfirm("");
+  };
+
+  const goToSignUp = () => {
+    setViewState("login");
+    setAuthMode("signup");
+  };
+
   const verifyEmailToken = async () => {
     if (!pendingEmail) {
       toast.error("Create your account first.");
       return;
     }
-    if (verificationCode.length < 6) {
-      toast.error("Enter the 6-digit code from your email.");
+    if (verificationCode.length < OTP_LENGTH) {
+      toast.error(`Enter the ${OTP_LENGTH}-digit code from your email.`);
       return;
     }
 
@@ -151,8 +176,9 @@ function LoginPage() {
     }
   };
 
-  const requestPasswordReset = async () => {
-    const resetEmail = (recoveryEmail || email).trim();
+  const requestPasswordReset = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const resetEmail = recoveryEmail.trim();
     if (!resetEmail) {
       toast.error("Enter your email first.");
       return;
@@ -166,169 +192,121 @@ function LoginPage() {
 
     if (error) toast.error(error.message);
     else {
-      setShowRecovery(true);
       setRecoveryEmail(resetEmail);
       setRecoveryCode("");
       setRecoveryPassword("");
+      setRecoveryPasswordConfirm("");
+      setViewState("verify-otp");
       toast.success("Password reset code sent.");
     }
   };
 
-  const confirmPasswordReset = async () => {
-    const resetEmail = (recoveryEmail || email).trim();
-    if (!canResetFromSession && !resetEmail) {
+  const verifyRecoveryCode = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const resetEmail = recoveryEmail.trim();
+    if (!resetEmail) {
       toast.error("Enter your email first.");
       return;
     }
-    if (!canResetFromSession && recoveryCode.length < 6) {
-      toast.error("Enter the 6-digit reset code.");
-      return;
-    }
-    if (recoveryPassword.length < 6) {
-      toast.error("Enter a new password with at least 6 characters.");
+    if (recoveryCode.length < OTP_LENGTH) {
+      toast.error(`Enter the ${OTP_LENGTH}-digit reset code.`);
       return;
     }
 
     setLoading(true);
-
-    if (!canResetFromSession) {
-      const { error } = await supabase.auth.verifyOtp({
-        email: resetEmail,
-        token: recoveryCode,
-        type: "recovery",
-      });
-
-      if (error) {
-        setLoading(false);
-        toast.error(error.message);
-        return;
-      }
-    }
-
-    const { error } = await supabase.auth.updateUser({ password: recoveryPassword });
+    const { error } = await supabase.auth.verifyOtp({
+      email: resetEmail,
+      token: recoveryCode,
+      type: "recovery",
+    });
     setLoading(false);
 
     if (error) toast.error(error.message);
     else {
-      setRecoveryCode("");
       setRecoveryPassword("");
-      setShowRecovery(false);
-      toast.success("Password updated.");
-      navigate({ to: "/dashboard" });
+      setRecoveryPasswordConfirm("");
+      setViewState("new-password");
+      toast.success("Code verified.");
     }
   };
 
-  const isSignUp = authMode === "signup";
+  const confirmPasswordReset = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (recoveryPassword.length < 6) {
+      toast.error("Enter a new password with at least 6 characters.");
+      return;
+    }
+    if (recoveryPassword !== recoveryPasswordConfirm) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: recoveryPassword });
+
+    if (error) toast.error(error.message);
+    else {
+      await supabase.auth.signOut();
+      setRecoveryCode("");
+      setRecoveryPassword("");
+      setRecoveryPasswordConfirm("");
+      setViewState("login");
+      setAuthMode("signin");
+      toast.success("Password updated. Sign in with your new password.");
+      navigate({ to: "/login", search: {} });
+    }
+
+    setLoading(false);
+  };
+
+  const isSignUp = authMode === "signup" && viewState === "login";
+  const cardTitle = getCardTitle(viewState, isSignUp);
+  const cardDescription = getCardDescription(viewState, isSignUp, recoveryEmail);
+  const primaryButtonClassName =
+    "h-12 w-full bg-slate-950 text-base text-white hover:bg-slate-800 disabled:bg-slate-300 disabled:text-slate-500 disabled:opacity-100";
+  const textButtonClassName =
+    "text-sm font-semibold text-slate-950 underline-offset-4 hover:underline";
 
   return (
     <div className="ambient-bg flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-lg overflow-hidden glass-strong border-0">
+      <Card className="w-full max-w-lg overflow-hidden border border-slate-200 bg-white text-slate-950 shadow-xl">
         <CardHeader className="items-center pb-4 text-center">
-          <Link to="/" className="mb-1 flex items-center gap-2 text-3xl font-bold text-foreground">
+          <Link to="/" className="mb-1 flex items-center gap-2 text-3xl font-bold text-slate-950">
             <FileText className="h-8 w-8" />
             Zuridoc
           </Link>
-          <CardTitle className="text-2xl">
-            {isSignUp ? "Create your Zuridoc account" : "Sign in to Zuridoc"}
-          </CardTitle>
-          <p className="text-base text-muted-foreground">
-            {isSignUp
-              ? "Create polished documents in seconds."
-              : "Welcome back. Please sign in to continue."}
-          </p>
+          <CardTitle className="text-2xl text-slate-950">{cardTitle}</CardTitle>
+          <p className="text-base text-slate-500">{cardDescription}</p>
         </CardHeader>
         <CardContent className="px-6 pb-0 sm:px-12">
-          <div className="space-y-6">
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="h-12 w-full text-base"
-              onClick={signInWithGoogle}
-              disabled={loading}
-            >
-              <GoogleIcon />
-              Continue with Google
-            </Button>
+          {viewState === "login" && (
+            <div className="space-y-6">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="h-12 w-full border-slate-200 bg-white text-base text-slate-950 hover:bg-slate-50"
+                onClick={signInWithGoogle}
+                disabled={loading}
+              >
+                <GoogleIcon />
+                Continue with Google
+              </Button>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="h-px flex-1 bg-border" />
-              or
-              <div className="h-px flex-1 bg-border" />
-            </div>
+              <div className="flex items-center gap-4 text-sm text-slate-500">
+                <div className="h-px flex-1 bg-slate-200" />
+                or
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
 
-            {isSignUp ? (
-              <form onSubmit={signUp} className="space-y-5">
-                <Field
-                  label="Full name"
-                  value={name}
-                  onChange={setName}
-                  placeholder="Enter your full name"
-                />
-                <Field
-                  label="Email address"
-                  value={email}
-                  onChange={setEmail}
-                  type="email"
-                  placeholder="Enter your email address"
-                />
-                <Field
-                  label="Password"
-                  value={password}
-                  onChange={setPassword}
-                  type="password"
-                  placeholder="Create a password"
-                />
-                <Button size="lg" className="h-12 w-full text-base" disabled={loading}>
-                  Continue
-                </Button>
-                {pendingEmail && (
-                  <div className="space-y-3 rounded-md border bg-background/60 p-4">
-                    <div className="flex items-start gap-2 text-sm">
-                      <MailCheck className="mt-0.5 h-4 w-4 text-primary" />
-                      <div>
-                        <p className="font-medium">Verification code sent</p>
-                        <p className="text-muted-foreground">{pendingEmail}</p>
-                      </div>
-                    </div>
-                    <InputOTP
-                      maxLength={6}
-                      value={verificationCode}
-                      onChange={setVerificationCode}
-                      disabled={loading}
-                      containerClassName="justify-center"
-                    >
-                      <InputOTPGroup>
-                        {Array.from({ length: 6 }).map((_, index) => (
-                          <InputOTPSlot key={index} index={index} />
-                        ))}
-                      </InputOTPGroup>
-                    </InputOTP>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <Button
-                        type="button"
-                        onClick={verifyEmailToken}
-                        disabled={loading || verificationCode.length < 6}
-                      >
-                        <ShieldCheck className="h-4 w-4" />
-                        Confirm
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={resendVerificationToken}
-                        disabled={loading}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        Resend
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </form>
-            ) : (
-              <div className="space-y-4">
-                <form onSubmit={signIn} className="space-y-5">
+              {isSignUp ? (
+                <form onSubmit={signUp} className="space-y-5">
+                  <Field
+                    label="Full name"
+                    value={name}
+                    onChange={setName}
+                    placeholder="Enter your full name"
+                  />
                   <Field
                     label="Email address"
                     value={email}
@@ -341,103 +319,226 @@ function LoginPage() {
                     value={password}
                     onChange={setPassword}
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder="Create a password"
                   />
-                  <Button size="lg" className="h-12 w-full text-base" disabled={loading}>
+                  <Button size="lg" className={primaryButtonClassName} disabled={loading}>
+                    Continue
+                  </Button>
+                  {pendingEmail && (
+                    <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-start gap-2 text-sm">
+                        <MailCheck className="mt-0.5 h-4 w-4 text-slate-950" />
+                        <div>
+                          <p className="font-medium">Verification code sent</p>
+                          <p className="text-slate-500">{pendingEmail}</p>
+                        </div>
+                      </div>
+                      <InputOTP
+                        maxLength={OTP_LENGTH}
+                        value={verificationCode}
+                        onChange={setVerificationCode}
+                        disabled={loading}
+                        containerClassName="justify-center"
+                      >
+                        <InputOTPGroup>
+                          {Array.from({ length: OTP_LENGTH }).map((_, index) => (
+                            <InputOTPSlot key={index} index={index} />
+                          ))}
+                        </InputOTPGroup>
+                      </InputOTP>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <Button
+                          type="button"
+                          className="bg-slate-950 text-white hover:bg-slate-800 disabled:bg-slate-300 disabled:text-slate-500 disabled:opacity-100"
+                          onClick={verifyEmailToken}
+                          disabled={loading || verificationCode.length < OTP_LENGTH}
+                        >
+                          <ShieldCheck className="h-4 w-4" />
+                          Confirm
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={resendVerificationToken}
+                          disabled={loading}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          Resend
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </form>
+              ) : (
+                <form onSubmit={signIn} className="space-y-5">
+                  <Field
+                    label="Email address"
+                    value={email}
+                    onChange={setEmail}
+                    type="email"
+                    placeholder="Enter your email address"
+                  />
+                  <div className="space-y-2">
+                    <Field
+                      label="Password"
+                      value={password}
+                      onChange={setPassword}
+                      type="password"
+                      placeholder="Enter your password"
+                    />
+                    <button
+                      type="button"
+                      className={`${textButtonClassName} ml-auto block`}
+                      onClick={goToForgotPassword}
+                      disabled={loading}
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                  <Button size="lg" className={primaryButtonClassName} disabled={loading}>
                     Continue
                   </Button>
                 </form>
-                <Button
+              )}
+            </div>
+          )}
+
+          {viewState === "forgot-password" && (
+            <form onSubmit={requestPasswordReset} className="space-y-5">
+              <Field
+                label="Email address"
+                value={recoveryEmail}
+                onChange={setRecoveryEmail}
+                type="email"
+                placeholder="Enter your email address"
+              />
+              <Button
+                size="lg"
+                className={primaryButtonClassName}
+                disabled={loading || !recoveryEmail.trim()}
+              >
+                Send Code
+              </Button>
+              <button
+                type="button"
+                className={`${textButtonClassName} mx-auto block`}
+                onClick={goToLogin}
+              >
+                Back to Login
+              </button>
+            </form>
+          )}
+
+          {viewState === "verify-otp" && (
+            <form onSubmit={verifyRecoveryCode} className="space-y-5">
+              <InputOTP
+                maxLength={OTP_LENGTH}
+                value={recoveryCode}
+                onChange={setRecoveryCode}
+                disabled={loading}
+                containerClassName="justify-center"
+              >
+                <InputOTPGroup>
+                  {Array.from({ length: OTP_LENGTH }).map((_, index) => (
+                    <InputOTPSlot key={index} index={index} />
+                  ))}
+                </InputOTPGroup>
+              </InputOTP>
+              <Button
+                size="lg"
+                className={primaryButtonClassName}
+                disabled={loading || recoveryCode.length < OTP_LENGTH}
+              >
+                Verify
+              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+                <button
                   type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={requestPasswordReset}
-                  disabled={loading}
+                  className={textButtonClassName}
+                  onClick={() => requestPasswordReset()}
+                  disabled={loading || !recoveryEmail.trim()}
                 >
-                  Forgot password?
-                </Button>
-                {showRecovery && (
-                  <div className="space-y-3 rounded-md border bg-background/60 p-4">
-                    <div className="flex items-start gap-2 text-sm">
-                      <KeyRound className="mt-0.5 h-4 w-4 text-primary" />
-                      <div>
-                        <p className="font-medium">Reset password</p>
-                        <p className="text-muted-foreground">
-                          {recoveryEmail || email || "Email verification"}
-                        </p>
-                      </div>
-                    </div>
-                    <Field
-                      label="Reset email"
-                      value={recoveryEmail}
-                      onChange={setRecoveryEmail}
-                      type="email"
-                      required={false}
-                      placeholder="Enter your reset email"
-                    />
-                    <InputOTP
-                      maxLength={6}
-                      value={recoveryCode}
-                      onChange={setRecoveryCode}
-                      disabled={loading || canResetFromSession}
-                      containerClassName="justify-center"
-                    >
-                      <InputOTPGroup>
-                        {Array.from({ length: 6 }).map((_, index) => (
-                          <InputOTPSlot key={index} index={index} />
-                        ))}
-                      </InputOTPGroup>
-                    </InputOTP>
-                    <Field
-                      label="New password"
-                      value={recoveryPassword}
-                      onChange={setRecoveryPassword}
-                      type="password"
-                      required={false}
-                      placeholder="Create a new password"
-                    />
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <Button
-                        type="button"
-                        onClick={confirmPasswordReset}
-                        disabled={
-                          loading ||
-                          recoveryPassword.length < 6 ||
-                          (!canResetFromSession && recoveryCode.length < 6)
-                        }
-                      >
-                        <ShieldCheck className="h-4 w-4" />
-                        Update
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={requestPasswordReset}
-                        disabled={loading}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        Resend
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                  Resend Code
+                </button>
+                <button type="button" className={textButtonClassName} onClick={goToLogin}>
+                  Back to Login
+                </button>
               </div>
-            )}
-          </div>
+            </form>
+          )}
+
+          {viewState === "new-password" && (
+            <form onSubmit={confirmPasswordReset} className="space-y-5">
+              <Field
+                label="Create a new password"
+                value={recoveryPassword}
+                onChange={setRecoveryPassword}
+                type="password"
+                placeholder="Create a new password"
+              />
+              <Field
+                label="Confirm new password"
+                value={recoveryPasswordConfirm}
+                onChange={setRecoveryPasswordConfirm}
+                type="password"
+                placeholder="Confirm your new password"
+              />
+              <Button
+                size="lg"
+                className={primaryButtonClassName}
+                disabled={
+                  loading ||
+                  recoveryPassword.length < 6 ||
+                  recoveryPassword !== recoveryPasswordConfirm
+                }
+              >
+                Update Password
+              </Button>
+              <button
+                type="button"
+                className={`${textButtonClassName} mx-auto block`}
+                onClick={goToLogin}
+              >
+                Back to Login
+              </button>
+            </form>
+          )}
         </CardContent>
-        <div className="mt-8 border-t bg-background/40 px-6 py-5 text-center text-sm sm:px-12">
-          {isSignUp ? "Already have an account? " : "Don't have an account? "}
-          <button
-            type="button"
-            className="font-semibold text-primary hover:underline"
-            onClick={() => setAuthMode(isSignUp ? "signin" : "signup")}
-          >
-            {isSignUp ? "Sign in" : "Sign up"}
-          </button>
-        </div>
+        {viewState === "login" && (
+          <div className="mt-8 border-t border-slate-200 bg-slate-50 px-6 py-5 text-center text-sm sm:px-12">
+            {isSignUp ? "Already have an account? " : "Don't have an account? "}
+            <button
+              type="button"
+              className="font-semibold text-slate-950 underline-offset-4 hover:underline"
+              onClick={isSignUp ? goToLogin : goToSignUp}
+            >
+              {isSignUp ? "Sign in" : "Sign up"}
+            </button>
+          </div>
+        )}
       </Card>
     </div>
   );
+}
+
+function getCardTitle(viewState: ViewState, isSignUp: boolean) {
+  if (viewState === "forgot-password") return "Reset Password";
+  if (viewState === "verify-otp") return "Enter Verification Code";
+  if (viewState === "new-password") return "Create a new password";
+  return isSignUp ? "Create your Zuridoc account" : "Sign in to Zuridoc";
+}
+
+function getCardDescription(viewState: ViewState, isSignUp: boolean, recoveryEmail: string) {
+  if (viewState === "forgot-password") return "Enter your email and we will send a reset code.";
+  if (viewState === "verify-otp") {
+    return recoveryEmail
+      ? `We sent a ${OTP_LENGTH}-digit code to ${recoveryEmail}.`
+      : `Enter the ${OTP_LENGTH}-digit code sent to your email.`;
+  }
+  if (viewState === "new-password") return "Choose a strong password to finish resetting access.";
+  return isSignUp
+    ? "Create polished documents in seconds."
+    : "Welcome back. Please sign in to continue.";
 }
 
 function GoogleIcon() {
@@ -490,16 +591,34 @@ function Field({
   required?: boolean;
   placeholder?: string;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword && showPassword ? "text" : type;
+
   return (
     <div className="space-y-1">
-      <Label>{label}</Label>
-      <Input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-        placeholder={placeholder}
-      />
+      <Label className="text-slate-950">{label}</Label>
+      <div className="relative">
+        <Input
+          type={inputType}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={required}
+          placeholder={placeholder}
+          className={isPassword ? "bg-white pr-11" : "bg-white"}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950"
+            onClick={() => setShowPassword((current) => !current)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            title={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
