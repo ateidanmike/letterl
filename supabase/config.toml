@@ -1,5 +1,13 @@
 project_id = "nvwqrvrmisrtmlptluds"
 
+[auth.email.template.confirmation]
+subject = "Your Zuridoc verification code"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Your Zuridoc password reset code"
+content_path = "./supabase/templates/recovery.html"
+
 [functions.clean-text]
 verify_jwt = true
 

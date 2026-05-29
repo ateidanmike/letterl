@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth/confirm")({
   component: ConfirmEmailPage,
-  head: () => ({ meta: [{ title: "Confirm email - Letterly" }] }),
+  head: () => ({ meta: [{ title: "Confirm email - Zuridoc" }] }),
 });
 
 type ConfirmState = "checking" | "missing" | "failed";
@@ -86,7 +86,7 @@ function ConfirmEmailPage() {
       <Card className="w-full max-w-md glass-strong border-0">
         <CardHeader>
           <Link to="/" className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-            <FileText className="h-4 w-4" /> Letterly
+            <FileText className="h-4 w-4" /> Zuridoc
           </Link>
           <CardTitle>{state === "checking" ? "Confirming email" : "Email confirmation"}</CardTitle>
         </CardHeader>

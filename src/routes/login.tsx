@@ -22,7 +22,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/login")({
   validateSearch: searchSchema,
   component: LoginPage,
-  head: () => ({ meta: [{ title: "Sign in - Letterly" }] }),
+  head: () => ({ meta: [{ title: "Sign in - Zuridoc" }] }),
 });
 
 function LoginPage() {
@@ -41,8 +41,7 @@ function LoginPage() {
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const authRedirectTo =
-    typeof window !== "undefined" ? `${window.location.origin}/auth/confirm` : undefined;
+  const authRedirectTo = getAuthRedirectTo();
   const canResetFromSession = reset === "1" && !!user;
 
   useEffect(() => {
@@ -202,7 +201,7 @@ function LoginPage() {
       <Card className="w-full max-w-md glass-strong border-0">
         <CardHeader>
           <Link to="/" className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-            <FileText className="h-4 w-4" /> Letterly
+            <FileText className="h-4 w-4" /> Zuridoc
           </Link>
           <CardTitle>Welcome</CardTitle>
         </CardHeader>
@@ -353,6 +352,18 @@ function LoginPage() {
       </Card>
     </div>
   );
+}
+
+function getAuthRedirectTo() {
+  const configuredSiteUrl =
+    import.meta.env.VITE_APP_URL ||
+    import.meta.env.VITE_SITE_URL ||
+    import.meta.env.VITE_PUBLIC_SITE_URL;
+  const origin =
+    configuredSiteUrl?.replace(/\/$/, "") ||
+    (typeof window !== "undefined" ? window.location.origin : undefined);
+
+  return origin ? `${origin}/auth/confirm` : undefined;
 }
 
 function Field({

@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
-  head: () => ({ meta: [{ title: "Letterhead creator - Letterly" }] }),
+  head: () => ({ meta: [{ title: "Letterhead creator - Zuridoc" }] }),
 });
 
 type Row = { id: string; title: string; template: string; updated_at: string; folder: string };

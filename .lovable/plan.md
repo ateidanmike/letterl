@@ -1,5 +1,5 @@
 
-# Letterly Letterhead Creator - Plan
+# Zuridoc Letterhead Creator - Plan
 
 A web tool where logged-in users upload their logo + brand details, type/paste body content, optionally clean it with AI (grammar + spelling), pick a preset template, and download a professional letterhead as PDF or DOCX. Saved letterheads and logos persist per user.
 
