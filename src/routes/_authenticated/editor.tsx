@@ -50,7 +50,7 @@ const searchSchema = z.object({ id: z.string().optional() });
 export const Route = createFileRoute("/_authenticated/editor")({
   validateSearch: searchSchema,
   component: Editor,
-  head: () => ({ meta: [{ title: "Editor — Zuridoc" }] }),
+  head: () => ({ meta: [{ title: "Letterhead editor - Letterly" }] }),
 });
 
 const emptyBrand: Brand = {

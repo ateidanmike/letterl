@@ -24,7 +24,7 @@ const searchSchema = z.object({ id: z.string().optional() });
 export const Route = createFileRoute("/_authenticated/document-editor")({
   validateSearch: searchSchema,
   component: DocumentEditor,
-  head: () => ({ meta: [{ title: "Document editor — Zuridoc" }] }),
+  head: () => ({ meta: [{ title: "Document editor - Letterly" }] }),
 });
 
 function DocumentEditor() {

@@ -1,13 +1,13 @@
 
-# Letterhead Generator — Plan
+# Letterly Letterhead Creator - Plan
 
 A web tool where logged-in users upload their logo + brand details, type/paste body content, optionally clean it with AI (grammar + spelling), pick a preset template, and download a professional letterhead as PDF or DOCX. Saved letterheads and logos persist per user.
 
 ## Stack additions
-- Enable **Lovable Cloud** (auth, database, storage, edge function for AI).
-- Email/password + Google login.
+- Enable Supabase auth, database, storage, and edge functions.
+- Email/password login with OTP verification.
 - Storage bucket `logos` (private, per-user RLS).
-- Edge function `clean-text` calling Lovable AI Gateway (`google/gemini-3-flash-preview`) for grammar/spelling correction.
+- Edge function `clean-text` for grammar/spelling correction.
 
 ## Pages / routes
 ```

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth/confirm")({
   component: ConfirmEmailPage,
-  head: () => ({ meta: [{ title: "Confirm email - Zuridoc" }] }),
+  head: () => ({ meta: [{ title: "Confirm email - Letterly" }] }),
 });
 
 type ConfirmState = "checking" | "missing" | "failed";
@@ -64,6 +64,12 @@ function ConfirmEmailPage() {
         return;
       }
 
+      if (type === "recovery") {
+        toast.success("Recovery verified.");
+        navigate({ to: "/login", search: { reset: "1" } });
+        return;
+      }
+
       toast.success("Email confirmed.");
       navigate({ to: next });
     };
@@ -80,7 +86,7 @@ function ConfirmEmailPage() {
       <Card className="w-full max-w-md glass-strong border-0">
         <CardHeader>
           <Link to="/" className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-            <FileText className="h-4 w-4" /> Zuridoc
+            <FileText className="h-4 w-4" /> Letterly
           </Link>
           <CardTitle>{state === "checking" ? "Confirming email" : "Email confirmation"}</CardTitle>
         </CardHeader>

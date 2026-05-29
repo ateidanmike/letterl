@@ -8,8 +8,8 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Zuridoc — Create stunning business documents in seconds" },
-      { name: "description", content: "Letterheads, invoices, receipts, quotations and delivery notes — beautifully branded and AI-drafted in seconds." },
+      { title: "Letterly - Letterhead creator for business documents" },
+      { name: "description", content: "Create polished letterheads, invoices, receipts, quotations and delivery notes with your brand." },
     ],
   }),
 });
@@ -20,7 +20,7 @@ function Index() {
     <div className="ambient-bg min-h-screen">
       <header className="sticky top-3 z-40 mx-auto mt-3 flex max-w-6xl items-center justify-between rounded-2xl px-6 py-3 glass">
         <div className="flex items-center gap-2 text-lg font-bold">
-          <FileText className="h-6 w-6 text-primary" /> Zuridoc
+          <FileText className="h-6 w-6 text-primary" /> Letterly
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -36,10 +36,10 @@ function Index() {
       </header>
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-12">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-muted-foreground glass">
-          <Sparkles className="h-3 w-3 text-primary" /> The modern AI workspace for business correspondence
+          <Sparkles className="h-3 w-3 text-primary" /> The modern letterhead creator for business correspondence
         </div>
         <h1 className="max-w-3xl text-5xl font-extrabold tracking-tight md:text-6xl">
-          Create stunning business documents{" "}
+          Create polished letterheads{" "}
           <span className="bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">in seconds</span>
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
@@ -130,7 +130,7 @@ function Index() {
               { q: "Does AI replace my writing?", a: "No — it drafts, polishes, or translates on demand. You stay in full control." },
               { q: "Is my data private?", a: "Letters and brand assets are scoped to your account. Logos are stored privately." },
               { q: "Can I export to Word?", a: "Yes — every letter exports to PDF, DOCX, PNG, or JPG." },
-              { q: "Do I need design skills?", a: "Pick a template, drop in your logo, and Zuridoc handles the layout." },
+              { q: "Do I need design skills?", a: "Pick a template, drop in your logo, and Letterly handles the layout." },
             ].map((f) => (
               <div key={f.q} className="rounded-2xl p-5 glass">
                 <p className="font-semibold">{f.q}</p>
@@ -141,7 +141,7 @@ function Index() {
         </section>
       </main>
       <footer className="border-t py-8 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Zuridoc · Crafted for teams that care about how they write.
+        © {new Date().getFullYear()} Letterly · Crafted for teams that care about how they write.
       </footer>
     </div>
   );

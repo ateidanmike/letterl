@@ -13,7 +13,7 @@ import { extractPalette } from "@/lib/letterhead/color-extract";
 
 export const Route = createFileRoute("/_authenticated/brand")({
   component: BrandPage,
-  head: () => ({ meta: [{ title: "Brand — Zuridoc" }] }),
+  head: () => ({ meta: [{ title: "Brand - Letterly" }] }),
 });
 
 type BrandRow = {

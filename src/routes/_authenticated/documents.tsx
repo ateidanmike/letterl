@@ -10,7 +10,7 @@ import { DOC_TYPES, DEFAULT_DOC, type DocType } from "@/lib/documents/types";
 
 export const Route = createFileRoute("/_authenticated/documents")({
   component: DocumentsPage,
-  head: () => ({ meta: [{ title: "Business documents — Zuridoc" }] }),
+  head: () => ({ meta: [{ title: "Business documents - Letterly" }] }),
 });
 
 type Row = { id: string; title: string; doc_type: DocType; doc_number: string; updated_at: string; status: string };

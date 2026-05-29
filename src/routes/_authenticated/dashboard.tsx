@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
-  head: () => ({ meta: [{ title: "My letterheads — Zuridoc" }] }),
+  head: () => ({ meta: [{ title: "Letterhead creator - Letterly" }] }),
 });
 
 type Row = { id: string; title: string; template: string; updated_at: string; folder: string };
@@ -55,7 +55,7 @@ function Dashboard() {
     <div className="ambient-bg min-h-screen">
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="flex items-center justify-between rounded-2xl glass px-5 py-4">
-        <h1 className="text-2xl font-bold">My letterheads</h1>
+        <h1 className="text-2xl font-bold">Letterhead creator</h1>
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <Button onClick={create}><Plus className="mr-2 h-4 w-4" /> New letterhead</Button>
