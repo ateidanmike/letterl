@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthConfirmRouteImport } from './routes/auth/confirm'
 import { Route as AuthenticatedEditorRouteImport } from './routes/_authenticated/editor'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDocumentEditorRouteImport } from './routes/_authenticated/document-editor'
@@ -30,6 +31,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedEditorRoute = AuthenticatedEditorRouteImport.update({
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/document-editor': typeof AuthenticatedDocumentEditorRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/editor': typeof AuthenticatedEditorRoute
+  '/auth/confirm': typeof AuthConfirmRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/document-editor': typeof AuthenticatedDocumentEditorRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/editor': typeof AuthenticatedEditorRoute
+  '/auth/confirm': typeof AuthConfirmRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/_authenticated/document-editor': typeof AuthenticatedDocumentEditorRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/editor': typeof AuthenticatedEditorRoute
+  '/auth/confirm': typeof AuthConfirmRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/document-editor'
     | '/documents'
     | '/editor'
+    | '/auth/confirm'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/document-editor'
     | '/documents'
     | '/editor'
+    | '/auth/confirm'
   id:
     | '__root__'
     | '/'
@@ -117,12 +128,14 @@ export interface FileRouteTypes {
     | '/_authenticated/document-editor'
     | '/_authenticated/documents'
     | '/_authenticated/editor'
+    | '/auth/confirm'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -146,6 +159,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/editor': {
@@ -210,6 +230,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
