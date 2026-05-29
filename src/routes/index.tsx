@@ -8,8 +8,13 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Zuridoc - Letterhead creator for business documents" },
-      { name: "description", content: "Create polished letterheads, invoices, receipts, quotations and delivery notes with your brand." },
+      { title: "Zuridoc - Create polished documents in seconds" },
+      { name: "description", content: "Create polished, branded business documents in seconds. AI-drafted letterheads, invoices, receipts, quotations and delivery notes export-ready as PDF, Word, PNG or JPG." },
+      { property: "og:title", content: "Zuridoc - Create polished documents in seconds" },
+      { property: "og:description", content: "The modern documents creator for business correspondence. Brand documents with your logo and colors, draft with AI, and export to PDF, Word, PNG, or JPG." },
+      { property: "og:url", content: "https://www.zuridoc.com" },
+      { name: "twitter:title", content: "Zuridoc - Create polished documents in seconds" },
+      { name: "twitter:description", content: "Create polished, branded business documents in seconds with AI drafting and multi-format export." },
     ],
   }),
 });
@@ -36,10 +41,10 @@ function Index() {
       </header>
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-12">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-muted-foreground glass">
-          <Sparkles className="h-3 w-3 text-primary" /> The modern letterhead creator for business correspondence
+          <Sparkles className="h-3 w-3 text-primary" /> The modern documents creator for business correspondence
         </div>
         <h1 className="max-w-3xl text-5xl font-extrabold tracking-tight md:text-6xl">
-          Create polished letterheads{" "}
+          Create polished documents{" "}
           <span className="bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">in seconds</span>
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
@@ -55,7 +60,7 @@ function Index() {
 
         <section id="documents" className="mt-20">
           <h2 className="text-3xl font-bold">Every document your business needs</h2>
-          <p className="mt-2 text-muted-foreground">One workspace. Letterheads plus four polished business document types.</p>
+          <p className="mt-2 text-muted-foreground">One workspace for letterheads, invoices, receipts, quotations and delivery notes.</p>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
             {[
               { icon: FileText, name: "Letters", desc: "AI-drafted letterheads with your brand." },
@@ -78,13 +83,13 @@ function Index() {
         </section>
 
         <div className="mt-20 grid gap-6 md:grid-cols-3">
-          <Feature icon={<Wand2 />} title="AI writing assistant">Generate, rewrite, shorten, expand, simplify or translate any letter — with tones from formal to friendly.</Feature>
+          <Feature icon={<Wand2 />} title="AI writing assistant">Generate, rewrite, shorten, expand, simplify or translate content — with tones from formal to friendly.</Feature>
           <Feature icon={<Palette />} title="Branded templates">Eight polished templates auto-styled with your logo, colors, watermark and signature.</Feature>
           <Feature icon={<Download />} title="Export anywhere">Print-ready PDF, editable Word, or PNG/JPG image for email and chat.</Feature>
         </div>
 
         <section id="use-cases" className="mt-24">
-          <h2 className="text-3xl font-bold">Built for every team that writes letters</h2>
+          <h2 className="text-3xl font-bold">Built for every team that creates documents</h2>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
             {[
               { name: "HR teams", icon: Users },
