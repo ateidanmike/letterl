@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
-import { Eye, EyeOff, FileText, MailCheck, RotateCcw, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, MailCheck, RotateCcw, ShieldCheck } from "lucide-react";
 import { z } from "zod";
 
 const searchSchema = z.object({
@@ -271,9 +271,8 @@ function LoginPage() {
     <div className="ambient-bg flex min-h-screen items-center justify-center px-4">
       <Card className="w-full max-w-lg overflow-hidden border border-slate-200 bg-white text-slate-950 shadow-xl">
         <CardHeader className="items-center pb-4 text-center">
-          <Link to="/" className="mb-1 flex items-center gap-2 text-3xl font-bold text-slate-950">
-            <FileText className="h-8 w-8" />
-            Zuridoc
+          <Link to="/" className="mb-2 flex h-14 w-[210px] items-center justify-center rounded-2xl bg-white px-4 py-2 shadow-sm ring-1 ring-slate-100">
+            <img src="/logo to use.png" alt="Zuridoc" className="h-11 w-full object-contain object-center" />
           </Link>
           <CardTitle className="text-2xl text-slate-950">{cardTitle}</CardTitle>
           <p className="text-base text-slate-500">{cardDescription}</p>

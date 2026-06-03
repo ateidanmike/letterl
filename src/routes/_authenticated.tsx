@@ -2,7 +2,6 @@ import { createFileRoute, Outlet, useNavigate, Link } from "@tanstack/react-rout
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
@@ -29,8 +28,8 @@ function AuthLayout() {
       <header className="border-b bg-background">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-6">
-            <Link to="/dashboard" className="flex items-center gap-2 font-bold">
-              <FileText className="h-5 w-5 text-primary" /> Zuridoc
+            <Link to="/dashboard" className="flex h-10 w-[150px] items-center justify-center rounded-xl bg-white px-3 py-1.5 shadow-sm">
+              <img src="/logo to use.png" alt="Zuridoc" className="h-8 w-full object-contain object-center" />
             </Link>
             <nav className="flex gap-1">
               <NavLink to="/dashboard">Letterhead creator</NavLink>

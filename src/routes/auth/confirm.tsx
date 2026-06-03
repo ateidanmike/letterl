@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { FileText, LogIn, RefreshCw } from "lucide-react";
+import { LogIn, RefreshCw } from "lucide-react";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -85,9 +85,9 @@ function ConfirmEmailPage() {
     <div className="ambient-bg flex min-h-screen items-center justify-center px-4">
       <Card className="w-full max-w-md glass-strong border-0">
         <CardHeader>
-          <Link to="/" className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-            <FileText className="h-4 w-4" /> Zuridoc
-          </Link>
+          <Link to="/" className="mb-3 flex h-12 w-[176px] items-center justify-center rounded-xl bg-white px-3 py-1.5 shadow-sm ring-1 ring-border/60">
+            <img src="/logo to use.png" alt="Zuridoc" className="h-9 w-full object-contain object-center" />
+            </Link>
           <CardTitle>{state === "checking" ? "Confirming email" : "Email confirmation"}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
