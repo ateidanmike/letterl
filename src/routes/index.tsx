@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -11,6 +12,7 @@ import {
   FileText,
   FolderKanban,
   LayoutDashboard,
+  Menu,
   Play,
   Settings,
   ShieldCheck,
@@ -18,6 +20,7 @@ import {
   Users,
   WalletCards,
   Wand2,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
@@ -58,6 +61,12 @@ const sidebarItems = [
 ];
 
 const recentDocuments = ["Employment Contract", "Business Proposal", "NDA Agreement", "Invoice Template", "Quotation Document"];
+
+const landingNavItems = [
+  { label: "Platform", href: "#platform" },
+  { label: "Workflow", href: "#workflow" },
+  { label: "Company", href: "#footer" },
+];
 
 const stats = [
   { label: "Documents Generated", value: "12.8k" },
@@ -102,25 +111,30 @@ function Index() {
 }
 
 function Hero({ primaryHref, user }: { primaryHref: string; user: boolean }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const primaryLabel = user ? "Open App" : "Start Free";
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
   return (
     <section className="relative min-h-[92vh] overflow-hidden bg-[linear-gradient(135deg,#011B43_0%,#012B6D_50%,#0067EC_100%)] text-white">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(234,244,255,0.22),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(255,255,255,0.2),transparent_24%),linear-gradient(180deg,transparent_72%,#ffffff_100%)]" />
-      <div className="relative mx-auto flex min-h-[92vh] max-w-7xl flex-col px-5 py-5 sm:px-8 lg:px-10">
+      <div className="relative mx-auto flex min-h-[92vh] max-w-7xl flex-col px-4 py-4 sm:px-8 sm:py-5 lg:px-10">
         <motion.header
           initial={{ opacity: 0, y: -14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55 }}
-          className="flex items-center justify-between rounded-2xl border border-white/15 bg-white/10 px-4 py-3 shadow-2xl shadow-[#011B43]/20 backdrop-blur-xl"
+          className="relative z-30 flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/10 px-3 py-3 shadow-2xl shadow-[#011B43]/20 backdrop-blur-xl sm:px-4"
         >
-          <Link to="/" className="flex h-12 w-[170px] items-center justify-center rounded-xl bg-white px-3 py-1.5 shadow-lg shadow-[#0067EC]/25 sm:w-[190px]">
+          <Link to="/" className="flex h-12 w-[170px] shrink-0 items-center justify-center rounded-xl bg-white px-3 py-1.5 shadow-lg shadow-[#0067EC]/25 sm:w-[190px]">
             <img src="/logo to use.png" alt="Zuridoc" className="h-10 w-full object-contain object-center sm:h-11" />
           </Link>
           <nav className="hidden items-center gap-7 text-sm text-white/80 md:flex">
-            <a href="#platform" className="transition hover:text-white">Platform</a>
-            <a href="#workflow" className="transition hover:text-white">Workflow</a>
-            <a href="#footer" className="transition hover:text-white">Company</a>
+            {landingNavItems.map((item) => (
+              <a key={item.href} href={item.href} className="transition hover:text-white">{item.label}</a>
+            ))}
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
             {!user && (
               <Link to="/login" className="hidden rounded-xl px-4 py-2 text-sm font-medium text-white/85 transition hover:text-white sm:inline-flex">
                 Sign in
@@ -130,27 +144,73 @@ function Hero({ primaryHref, user }: { primaryHref: string; user: boolean }) {
               to={primaryHref}
               className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#011B43] shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:shadow-white/25"
             >
-              {user ? "Open App" : "Start Free"}
+              {primaryLabel}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
+          <button
+            type="button"
+            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white text-[#011B43] shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-[#EAF4FF] md:hidden"
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </motion.header>
 
-        <div className="grid flex-1 items-center gap-10 py-12 lg:grid-cols-[0.88fr_1.12fr] lg:py-10">
+        <motion.div
+          initial={false}
+          animate={mobileMenuOpen ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -10, scale: 0.98 }}
+          transition={{ duration: 0.18 }}
+          className={`relative z-20 mt-3 overflow-hidden rounded-2xl border border-white/15 bg-white p-2 text-[#011B43] shadow-2xl shadow-[#011B43]/25 md:hidden ${mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none hidden"}`}
+        >
+          <nav className="grid gap-1" aria-label="Mobile navigation">
+            {landingNavItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                onClick={closeMobileMenu}
+                className="rounded-xl px-4 py-3 text-base font-semibold transition hover:bg-[#EAF4FF] hover:text-[#0067EC]"
+              >
+                {item.label}
+              </a>
+            ))}
+            {!user && (
+              <Link
+                to="/login"
+                onClick={closeMobileMenu}
+                className="rounded-xl px-4 py-3 text-base font-semibold transition hover:bg-[#EAF4FF] hover:text-[#0067EC]"
+              >
+                Sign in
+              </Link>
+            )}
+            <Link
+              to={primaryHref}
+              onClick={closeMobileMenu}
+              className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0067EC] px-4 py-3 text-base font-semibold text-white shadow-lg shadow-[#0067EC]/25"
+            >
+              {primaryLabel}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </nav>
+        </motion.div>
+
+        <div className="grid flex-1 items-center gap-10 py-10 sm:py-12 lg:grid-cols-[0.88fr_1.12fr] lg:py-10">
           <motion.div
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.1 }}
             className="max-w-3xl"
           >
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-[#EAF4FF] backdrop-blur-xl">
-              <Sparkles className="h-4 w-4 text-white" />
-              Create Professional Documents in Minutes with AI
+            <div className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-[#EAF4FF] backdrop-blur-xl">
+              <Sparkles className="h-4 w-4 shrink-0 text-white" />
+              <span className="min-w-0 whitespace-normal leading-5">Create Professional Documents in Minutes with AI</span>
             </div>
-            <div className="mb-7 inline-flex rounded-2xl bg-white px-5 py-4 shadow-2xl shadow-[#011B43]/20">
-              <img src="/secondary logo.png" alt="Zuridoc" className="h-14 w-auto max-w-[230px] object-contain sm:h-16" />
+            <div className="mb-7 inline-flex max-w-full rounded-2xl bg-white px-5 py-4 shadow-2xl shadow-[#011B43]/20">
+              <img src="/secondary logo.png" alt="Zuridoc" className="h-14 w-auto max-w-[min(230px,100%)] object-contain sm:h-16" />
             </div>
-            <h1 className="text-5xl font-semibold leading-[1.02] tracking-normal sm:text-6xl lg:text-7xl">
+            <h1 className="text-[clamp(2.65rem,18vw,4.75rem)] font-semibold leading-[1.04] tracking-normal sm:text-6xl lg:text-7xl">
               Generate Professional Documents in Minutes
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[#EAF4FF] sm:text-xl">
