@@ -32,9 +32,10 @@ function AuthLayout() {
               <img src="/logo to use.png" alt="Zuridoc" className="h-8 w-full object-contain object-center" />
             </Link>
             <nav className="flex gap-1">
-              <NavLink to="/dashboard">Letterhead creator</NavLink>
+              <NavLink to="/dashboard">Dashboard</NavLink>
               <NavLink to="/documents">Documents</NavLink>
-              <NavLink to="/brand">Brand</NavLink>
+              <NavLink to="/brand">Brand setup</NavLink>
+              <button type="button" onClick={() => alert("Account settings and billing are available from the dashboard summary.")} className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">Account</button>
             </nav>
           </div>
           <Button variant="ghost" size="sm" onClick={signOut}>

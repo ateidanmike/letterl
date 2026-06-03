@@ -94,6 +94,9 @@ function Index() {
       <main>
         <TrustBand />
         <FeatureSection />
+        <TemplatesShowcase />
+        <PricingSection primaryHref={primaryHref} />
+        <TestimonialsSection />
         <WorkflowSection primaryHref={primaryHref} />
       </main>
       <Footer />
@@ -374,6 +377,84 @@ function FeatureSection() {
   );
 }
 
+
+function TemplatesShowcase() {
+  const templates = ["Invoice", "Contract", "Proposal", "Agreement", "Quotation", "Employment Letter", "Business Plan", "NDA"];
+  return (
+    <section className="bg-white px-5 py-20 sm:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase text-[#0067EC]">Templates showcase</p>
+            <h2 className="mt-3 max-w-3xl text-4xl font-semibold tracking-normal text-[#011B43] sm:text-5xl">
+              Start with the exact document your team needs.
+            </h2>
+          </div>
+          <p className="max-w-md text-sm leading-6 text-slate-600">
+            Pick a structure, fill the required fields, let AI generate the draft, then preview, edit, save, and export.
+          </p>
+        </div>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {templates.map((template) => (
+            <div key={template} className="rounded-[20px] border border-slate-200 bg-[#F8FAFC] p-5 transition hover:-translate-y-1 hover:bg-white hover:shadow-xl hover:shadow-[#0067EC]/10">
+              <FileText className="h-7 w-7 text-[#0067EC]" />
+              <h3 className="mt-5 text-lg font-semibold text-[#011B43]">{template}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">AI-ready fields, brand controls, preview, draft saving, and delivery options.</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PricingSection({ primaryHref }: { primaryHref: string }) {
+  return (
+    <section className="bg-[#F8FAFC] px-5 py-20 sm:px-8">
+      <div className="mx-auto max-w-7xl">
+        <p className="text-sm font-semibold uppercase text-[#0067EC]">Pricing</p>
+        <h2 className="mt-3 text-4xl font-semibold tracking-normal text-[#011B43] sm:text-5xl">Start free, upgrade when your document volume grows.</h2>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {[
+            { name: "Free", price: "$0", body: "Create starter documents, save drafts, and export PDFs." },
+            { name: "Pro", price: "$19", body: "More exports, DOCX delivery, share links, and usage analytics." },
+            { name: "Team", price: "$49", body: "Team members, collaboration, version history, billing controls, and e-signature requests." },
+          ].map((plan) => (
+            <div key={plan.name} className="rounded-[20px] border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-[#011B43]">{plan.name}</h3>
+              <p className="mt-3 text-4xl font-semibold text-[#011B43]">{plan.price}<span className="text-sm font-medium text-slate-500">/mo</span></p>
+              <p className="mt-4 min-h-16 text-sm leading-6 text-slate-600">{plan.body}</p>
+              <Link to={primaryHref} className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#0067EC] font-semibold text-white transition hover:bg-[#0057c8]">Get Started Free</Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TestimonialsSection() {
+  return (
+    <section className="bg-white px-5 py-20 sm:px-8">
+      <div className="mx-auto max-w-7xl">
+        <p className="text-sm font-semibold uppercase text-[#0067EC]">Testimonials</p>
+        <h2 className="mt-3 text-4xl font-semibold tracking-normal text-[#011B43] sm:text-5xl">Built for teams that need documents to look finished.</h2>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {[
+            { quote: "We moved from rough drafts to client-ready proposals in one flow.", name: "Operations lead" },
+            { quote: "Invoices, quotations, and HR letters finally use the same brand system.", name: "Founder" },
+            { quote: "The draft, preview, and export path is exactly what our team needed.", name: "Legal coordinator" },
+          ].map((item) => (
+            <div key={item.name} className="rounded-[20px] border border-slate-200 bg-[#F8FAFC] p-6">
+              <p className="text-lg leading-8 text-[#011B43]">“{item.quote}”</p>
+              <p className="mt-5 text-sm font-semibold text-[#0067EC]">{item.name}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 function WorkflowSection({ primaryHref }: { primaryHref: string }) {
   return (
     <section id="workflow" className="bg-white px-5 py-20 sm:px-8">

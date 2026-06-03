@@ -69,10 +69,10 @@ function LoginPage() {
     else navigate({ to: "/dashboard" });
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithProvider = async (provider: "google" | "azure") => {
     setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
+      provider,
       options: {
         redirectTo: authRedirectTo,
         queryParams: {
@@ -85,6 +85,9 @@ function LoginPage() {
     setLoading(false);
     if (error) toast.error(error.message);
   };
+
+  const signInWithGoogle = () => signInWithProvider("google");
+  const signInWithMicrosoft = () => signInWithProvider("azure");
 
   const signUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -280,17 +283,30 @@ function LoginPage() {
         <CardContent className="px-6 pb-0 sm:px-12">
           {viewState === "login" && (
             <div className="space-y-6">
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="h-12 w-full border-slate-200 bg-white text-base text-slate-950 hover:bg-slate-50"
-                onClick={signInWithGoogle}
-                disabled={loading}
-              >
-                <GoogleIcon />
-                Continue with Google
-              </Button>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="h-12 w-full border-slate-200 bg-white text-base text-slate-950 hover:bg-slate-50"
+                  onClick={signInWithGoogle}
+                  disabled={loading}
+                >
+                  <GoogleIcon />
+                  Google
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="h-12 w-full border-slate-200 bg-white text-base text-slate-950 hover:bg-slate-50"
+                  onClick={signInWithMicrosoft}
+                  disabled={loading}
+                >
+                  <MicrosoftIcon />
+                  Microsoft
+                </Button>
+              </div>
 
               <div className="flex items-center gap-4 text-sm text-slate-500">
                 <div className="h-px flex-1 bg-slate-200" />
@@ -538,6 +554,17 @@ function getCardDescription(viewState: ViewState, isSignUp: boolean, recoveryEma
   return isSignUp
     ? "Create polished documents in seconds."
     : "Welcome back. Please sign in to continue.";
+}
+
+function MicrosoftIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+      <path fill="#F25022" d="M2 2h9.5v9.5H2z" />
+      <path fill="#7FBA00" d="M12.5 2H22v9.5h-9.5z" />
+      <path fill="#00A4EF" d="M2 12.5h9.5V22H2z" />
+      <path fill="#FFB900" d="M12.5 12.5H22V22h-9.5z" />
+    </svg>
+  );
 }
 
 function GoogleIcon() {

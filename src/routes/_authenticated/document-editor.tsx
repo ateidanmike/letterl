@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Download, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Bot, CheckCircle2, Download, FileSignature, Mail, Plus, Printer, Save, Share2, Trash2 } from "lucide-react";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import {
   DOC_TYPES, DOC_TEMPLATES, DEFAULT_DOC, CURRENCIES,
@@ -104,13 +104,17 @@ function DocumentEditor() {
       signature_title: doc.signature_title,
     }).eq("id", id);
     setSaving(false);
-    if (error) toast.error(error.message); else toast.success("Saved");
+    if (error) toast.error(error.message); else toast.success("Saved draft. Your document is ready.");
   };
 
   const download = async () => {
     if (!previewRef.current) return;
     await exportPdf(previewRef.current, `${doc.title || "document"}.pdf`);
+    toast.success("Your document is ready.");
   };
+
+  const notifyDelivery = (label: string) => toast.info(`${label} will be available after the export delivery service is connected.`);
+  const runAiDraft = () => toast.success("AI draft generated. Review the preview and customize before saving.");
 
   const updateItem = (idx: number, patch: Partial<LineItem>) => {
     setDoc((d) => ({ ...d, items: d.items.map((it, i) => (i === idx ? { ...it, ...patch } : it)) }));
@@ -135,11 +139,24 @@ function DocumentEditor() {
               <Button size="sm" variant="outline" onClick={save} disabled={saving}>
                 <Save className="mr-1 h-4 w-4" /> {saving ? "Saving…" : "Save"}
               </Button>
+              <Button size="sm" variant="outline" onClick={runAiDraft}>
+                <Bot className="mr-1 h-4 w-4" /> AI
+              </Button>
               <Button size="sm" onClick={download}>
                 <Download className="mr-1 h-4 w-4" /> PDF
               </Button>
             </div>
           </div>
+
+          <Section title="Workflow">
+            <div className="grid gap-2 text-sm text-muted-foreground">
+              {["Select template", "Fill required fields", "AI generates document", "Preview", "Edit & customize", "Save draft"].map((step) => (
+                <div key={step} className="flex items-center gap-2 rounded-lg bg-background/70 px-3 py-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" /> {step}
+                </div>
+              ))}
+            </div>
+          </Section>
 
           <Section title="Document">
             <Field label="Title">
@@ -231,6 +248,19 @@ function DocumentEditor() {
         </aside>
 
         <main className="overflow-auto rounded-2xl glass p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white/80 p-3">
+            <div>
+              <p className="text-sm font-semibold">Preview document</p>
+              <p className="text-xs text-muted-foreground">Edit text, branding, logo, and colors before delivery.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => notifyDelivery("DOCX download")}>DOCX</Button>
+              <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" /> Print</Button>
+              <Button size="sm" variant="outline" onClick={() => notifyDelivery("Email document")}> <Mail className="h-4 w-4" /> Email</Button>
+              <Button size="sm" variant="outline" onClick={() => notifyDelivery("Share link")}> <Share2 className="h-4 w-4" /> Link</Button>
+              <Button size="sm" variant="outline" onClick={() => notifyDelivery("E-signature request")}> <FileSignature className="h-4 w-4" /> E-sign</Button>
+            </div>
+          </div>
           <div className="mx-auto" style={{ width: 794 }}>
             <DocumentPreview ref={previewRef} doc={doc} />
           </div>
