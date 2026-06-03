@@ -46,6 +46,7 @@ function LoginPage() {
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [recoveryPasswordConfirm, setRecoveryPasswordConfirm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendingRecoveryCode, setResendingRecoveryCode] = useState(false);
 
   const authRedirectTo = getAuthRedirectTo();
 
@@ -176,29 +177,42 @@ function LoginPage() {
     }
   };
 
-  const requestPasswordReset = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const resetEmail = recoveryEmail.trim();
+  const sendRecoveryCodeEmail = async (resetEmail: string, resend = false) => {
     if (!resetEmail) {
       toast.error("Enter your email first.");
       return;
     }
 
-    setLoading(true);
+    if (resend) setResendingRecoveryCode(true);
+    else setLoading(true);
+
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
       redirectTo: authRedirectTo,
     });
-    setLoading(false);
 
-    if (error) toast.error(error.message);
-    else {
-      setRecoveryEmail(resetEmail);
-      setRecoveryCode("");
-      setRecoveryPassword("");
-      setRecoveryPasswordConfirm("");
-      setViewState("verify-otp");
-      toast.success("Password reset code sent.");
+    if (resend) setResendingRecoveryCode(false);
+    else setLoading(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
     }
+
+    setRecoveryEmail(resetEmail);
+    setRecoveryCode("");
+    setRecoveryPassword("");
+    setRecoveryPasswordConfirm("");
+    setViewState("verify-otp");
+    toast.success(resend ? "New reset code sent to your email." : "Password reset code sent.");
+  };
+
+  const requestPasswordReset = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    await sendRecoveryCodeEmail(recoveryEmail.trim());
+  };
+
+  const resendRecoveryCode = async () => {
+    await sendRecoveryCodeEmail(recoveryEmail.trim(), true);
   };
 
   const verifyRecoveryCode = async (e?: React.FormEvent) => {
@@ -455,10 +469,10 @@ function LoginPage() {
                 <button
                   type="button"
                   className={textButtonClassName}
-                  onClick={() => requestPasswordReset()}
-                  disabled={loading || !recoveryEmail.trim()}
+                  onClick={resendRecoveryCode}
+                  disabled={loading || resendingRecoveryCode || !recoveryEmail.trim()}
                 >
-                  Resend Code
+                  {resendingRecoveryCode ? "Sending..." : "Resend Code"}
                 </button>
                 <button type="button" className={textButtonClassName} onClick={goToLogin}>
                   Back to Login
