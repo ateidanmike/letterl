@@ -41,7 +41,7 @@ function ConfirmEmailPage() {
       if (!tokenHash) {
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-          navigate({ to: next });
+          navigate({ to: next, replace: true });
           return;
         }
 
@@ -66,12 +66,12 @@ function ConfirmEmailPage() {
 
       if (type === "recovery") {
         toast.success("Recovery verified.");
-        navigate({ to: "/login", search: { reset: "1" } });
+        navigate({ to: "/login", search: { reset: "1" }, replace: true });
         return;
       }
 
       toast.success("Email confirmed.");
-      navigate({ to: next });
+      navigate({ to: next, replace: true });
     };
 
     confirmEmail();

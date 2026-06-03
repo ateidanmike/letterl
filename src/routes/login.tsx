@@ -27,7 +27,7 @@ export const Route = createFileRoute("/login")({
 type AuthMode = "signin" | "signup";
 type ViewState = "login" | "forgot-password" | "verify-otp" | "new-password";
 
-const OTP_LENGTH = 5;
+const OTP_LENGTH = 6;
 
 function LoginPage() {
   const navigate = useNavigate();
