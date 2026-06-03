@@ -27,6 +27,8 @@ jobs:
         run: |
           node --version
           npm --version
+          npm install -g npm@11.13.0
+          npm --version
           npm ci --prefer-online --no-audit --no-fund
 
       - name: Build
