@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { toast } from "sonner";
 import { Eye, EyeOff, MailCheck, RotateCcw, ShieldCheck } from "lucide-react";
 import { z } from "zod";
@@ -349,6 +350,7 @@ function LoginPage() {
                       </div>
                       <InputOTP
                         maxLength={OTP_LENGTH}
+                        pattern={REGEXP_ONLY_DIGITS}
                         value={verificationCode}
                         onChange={setVerificationCode}
                         disabled={loading}
@@ -447,6 +449,7 @@ function LoginPage() {
             <form onSubmit={verifyRecoveryCode} className="mx-auto w-full max-w-md space-y-6">
               <InputOTP
                 maxLength={OTP_LENGTH}
+                pattern={REGEXP_ONLY_DIGITS}
                 value={recoveryCode}
                 onChange={setRecoveryCode}
                 disabled={loading}
