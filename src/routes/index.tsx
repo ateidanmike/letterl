@@ -112,8 +112,8 @@ function Hero({ primaryHref, user }: { primaryHref: string; user: boolean }) {
           transition={{ duration: 0.55 }}
           className="flex items-center justify-between rounded-2xl border border-white/15 bg-white/10 px-4 py-3 shadow-2xl shadow-[#011B43]/20 backdrop-blur-xl"
         >
-          <Link to="/" className="flex h-16 min-w-[236px] items-center rounded-2xl bg-white px-5 py-3 shadow-lg shadow-[#0067EC]/25 sm:min-w-[272px]">
-            <img src="/logo to use.png" alt="Zuridoc" className="h-11 w-full object-contain object-left sm:h-12" />
+          <Link to="/" className="flex h-12 w-[170px] items-center rounded-xl bg-white px-4 py-2 shadow-lg shadow-[#0067EC]/25 sm:w-[190px]">
+            <img src="/logo to use.png" alt="Zuridoc" className="h-8 w-full object-contain object-left sm:h-9" />
           </Link>
           <nav className="hidden items-center gap-7 text-sm text-white/80 md:flex">
             <a href="#platform" className="transition hover:text-white">Platform</a>
