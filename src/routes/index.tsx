@@ -13,7 +13,6 @@ import {
   FolderKanban,
   LayoutDashboard,
   Menu,
-  Play,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -210,27 +209,20 @@ function Hero({ primaryHref, user }: { primaryHref: string; user: boolean }) {
             <div className="mb-7 inline-flex max-w-full rounded-2xl bg-white px-5 py-4 shadow-2xl shadow-[#011B43]/20">
               <img src="/secondary logo.png" alt="Zuridoc" className="h-14 w-auto max-w-[min(230px,100%)] object-contain sm:h-16" />
             </div>
-            <h1 className="text-[clamp(2.65rem,18vw,4.75rem)] font-semibold leading-[1.04] tracking-normal sm:text-6xl lg:text-7xl">
+            <h1 className="text-[clamp(2.35rem,13.5vw,4.2rem)] font-semibold leading-[1.04] tracking-normal sm:text-6xl lg:text-7xl">
               Generate Professional Documents in Minutes
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[#EAF4FF] sm:text-xl">
               Create contracts, proposals, invoices, agreements, HR documents, legal paperwork, and business documents instantly with AI-powered automation.
             </p>
-            <div className="mt-9 flex flex-wrap gap-4">
+            <div className="mt-8 flex flex-wrap gap-4 sm:mt-9">
               <Link
                 to={primaryHref}
-                className="group inline-flex h-13 items-center justify-center gap-2 rounded-2xl bg-[#0067EC] px-7 text-base font-semibold text-white shadow-[0_0_34px_rgba(0,103,236,0.55)] transition hover:-translate-y-1 hover:shadow-[0_0_46px_rgba(0,103,236,0.8)]"
+                className="group inline-flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-[#0067EC] px-7 text-base font-semibold text-white shadow-[0_0_34px_rgba(0,103,236,0.55)] transition hover:-translate-y-1 hover:shadow-[0_0_46px_rgba(0,103,236,0.8)] sm:w-auto"
               >
                 Start Free
                 <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
               </Link>
-              <a
-                href="#platform"
-                className="inline-flex h-13 items-center justify-center gap-2 rounded-2xl border border-white bg-transparent px-7 text-base font-semibold text-white transition hover:-translate-y-1 hover:bg-white/10"
-              >
-                <Play className="h-4 w-4 fill-current" />
-                Watch Demo
-              </a>
             </div>
           </motion.div>
 
@@ -247,7 +239,7 @@ function DashboardMockup() {
       initial={{ opacity: 0, y: 36, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.75, delay: 0.22 }}
-      className="relative mx-auto w-full max-w-3xl"
+      className="relative mx-auto w-full max-w-3xl overflow-hidden sm:overflow-visible"
     >
       <motion.div
         animate={{ y: [0, -12, 0] }}
@@ -282,14 +274,14 @@ function DashboardMockup() {
       </motion.div>
 
       <div className="overflow-hidden rounded-[24px] border border-white/20 bg-white/95 shadow-[0_32px_100px_rgba(1,27,67,0.35)]">
-        <div className="flex h-12 items-center gap-2 border-b border-slate-200 bg-[#F8FAFC] px-5">
+        <div className="flex h-11 items-center gap-2 border-b border-slate-200 bg-[#F8FAFC] px-3 sm:h-12 sm:px-5">
           <span className="h-3 w-3 rounded-full bg-red-400" />
           <span className="h-3 w-3 rounded-full bg-[#F59E0B]" />
           <span className="h-3 w-3 rounded-full bg-[#22C55E]" />
-          <span className="ml-4 rounded-full bg-white px-4 py-1 text-xs font-medium text-slate-500">zuridoc.ai/dashboard</span>
+          <span className="ml-2 min-w-0 flex-1 rounded-full bg-white px-3 py-1 text-center text-[10px] font-medium text-slate-500 sm:ml-4 sm:px-4 sm:text-xs">zuridoc.ai/dashboard</span>
         </div>
-        <div className="grid min-h-[520px] grid-cols-[168px_1fr] bg-white text-[#111827] sm:grid-cols-[210px_1fr]">
-          <aside className="border-r border-slate-200 bg-[#011B43] p-4 text-white">
+        <div className="grid min-h-0 grid-cols-1 bg-white text-[#111827] sm:min-h-[520px] sm:grid-cols-[210px_1fr]">
+          <aside className="hidden border-r border-slate-200 bg-[#011B43] p-4 text-white sm:block">
             <div className="mb-6 flex items-center gap-2 text-sm font-semibold">
               <FileText className="h-5 w-5 text-[#0067EC]" />
               Workspace
@@ -309,28 +301,28 @@ function DashboardMockup() {
               ))}
             </div>
           </aside>
-          <div className="bg-[#F8FAFC] p-4 sm:p-6">
-            <div className="mb-5 flex items-start justify-between gap-3">
+          <div className="min-w-0 bg-[#F8FAFC] p-3 sm:p-6">
+            <div className="mb-4 flex items-start justify-between gap-3 sm:mb-5">
               <div>
                 <p className="text-xs font-semibold uppercase text-[#0067EC]">AI Document Generator</p>
-                <h2 className="mt-1 text-xl font-semibold text-[#011B43] sm:text-2xl">Generate from a simple prompt</h2>
+                <h2 className="mt-1 text-lg font-semibold leading-tight text-[#011B43] sm:text-2xl">Generate from a simple prompt</h2>
               </div>
-              <span className="rounded-full bg-[#EAF4FF] px-3 py-1 text-xs font-semibold text-[#0067EC]">Live</span>
+              <span className="shrink-0 rounded-full bg-[#EAF4FF] px-3 py-1 text-xs font-semibold text-[#0067EC]">Live</span>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
               <p className="text-sm text-slate-500">Create an employment contract for a senior product designer in Nairobi...</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {["Contract", "Legal", "HR", "Kenya"].map((tag) => (
                   <span key={tag} className="rounded-full bg-[#EAF4FF] px-3 py-1 text-xs font-medium text-[#0067EC]">{tag}</span>
                 ))}
               </div>
-              <button className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0067EC] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[#0067EC]/25">
+              <button className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0067EC] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[#0067EC]/25 sm:w-auto">
                 Generate Document <Sparkles className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_0.8fr]">
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mt-4 grid gap-3 sm:mt-5 sm:gap-4 lg:grid-cols-[1fr_0.8fr]">
+              <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
                 <h3 className="mb-3 text-sm font-semibold text-[#011B43]">Recent Documents</h3>
                 <div className="space-y-2">
                   {recentDocuments.map((document, index) => (
@@ -339,11 +331,11 @@ function DashboardMockup() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.35, delay: 0.75 + index * 0.05 }}
-                      className="flex items-center justify-between rounded-xl border border-slate-100 px-3 py-2"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-2"
                     >
-                      <span className="flex items-center gap-2 text-sm text-slate-700">
-                        <FileText className="h-4 w-4 text-[#0067EC]" />
-                        {document}
+                      <span className="flex min-w-0 items-center gap-2 text-sm text-slate-700">
+                        <FileText className="h-4 w-4 shrink-0 text-[#0067EC]" />
+                        <span className="min-w-0 truncate">{document}</span>
                       </span>
                       <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
                     </motion.div>
