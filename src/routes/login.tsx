@@ -260,6 +260,7 @@ function LoginPage() {
   };
 
   const isSignUp = authMode === "signup" && viewState === "login";
+  const isRecoveryView = viewState !== "login";
   const cardTitle = getCardTitle(viewState, isSignUp);
   const cardDescription = getCardDescription(viewState, isSignUp, recoveryEmail);
   const primaryButtonClassName =
@@ -268,16 +269,16 @@ function LoginPage() {
     "text-sm font-semibold text-slate-950 underline-offset-4 hover:underline";
 
   return (
-    <div className="ambient-bg flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-lg overflow-hidden border border-slate-200 bg-white text-slate-950 shadow-xl">
-        <CardHeader className="items-center pb-4 text-center">
-          <Link to="/" className="mb-2 flex h-14 w-[210px] items-center justify-center rounded-2xl bg-white px-4 py-2 shadow-sm ring-1 ring-slate-100">
+    <div className="ambient-bg flex min-h-screen items-center justify-center px-4 py-6 sm:py-10">
+      <Card className={`w-full ${isRecoveryView ? "max-w-xl" : "max-w-lg"} overflow-hidden border border-slate-200 bg-white text-slate-950 shadow-xl`}>
+        <CardHeader className={`items-center text-center ${isRecoveryView ? "px-6 pb-5 pt-8 sm:px-12 sm:pt-9" : "pb-4"}`}>
+          <Link to="/" className="mb-3 flex h-14 w-[210px] items-center justify-center rounded-2xl bg-white px-4 py-2 shadow-sm ring-1 ring-slate-100">
             <img src="/logo to use.png" alt="Zuridoc" className="h-11 w-full object-contain object-center" />
           </Link>
-          <CardTitle className="text-2xl text-slate-950">{cardTitle}</CardTitle>
-          <p className="text-base text-slate-500">{cardDescription}</p>
+          <CardTitle className="text-2xl text-slate-950 sm:text-3xl">{cardTitle}</CardTitle>
+          <p className="max-w-md text-base text-slate-500 sm:text-lg">{cardDescription}</p>
         </CardHeader>
-        <CardContent className="px-6 pb-0 sm:px-12">
+        <CardContent className={`px-6 ${isRecoveryView ? "pb-8 sm:px-16 sm:pb-10" : "pb-0 sm:px-12"}`}>
           {viewState === "login" && (
             <div className="space-y-6">
               <Button
@@ -403,7 +404,7 @@ function LoginPage() {
           )}
 
           {viewState === "forgot-password" && (
-            <form onSubmit={requestPasswordReset} className="space-y-5">
+            <form onSubmit={requestPasswordReset} className="mx-auto w-full max-w-md space-y-6">
               <Field
                 label="Email address"
                 value={recoveryEmail}
@@ -420,7 +421,7 @@ function LoginPage() {
               </Button>
               <button
                 type="button"
-                className={`${textButtonClassName} mx-auto block`}
+                className={`${textButtonClassName} mx-auto block pt-1`}
                 onClick={goToLogin}
               >
                 Back to Login
@@ -429,7 +430,7 @@ function LoginPage() {
           )}
 
           {viewState === "verify-otp" && (
-            <form onSubmit={verifyRecoveryCode} className="space-y-5">
+            <form onSubmit={verifyRecoveryCode} className="mx-auto w-full max-w-md space-y-6">
               <InputOTP
                 maxLength={OTP_LENGTH}
                 value={recoveryCode}
@@ -467,7 +468,7 @@ function LoginPage() {
           )}
 
           {viewState === "new-password" && (
-            <form onSubmit={confirmPasswordReset} className="space-y-5">
+            <form onSubmit={confirmPasswordReset} className="mx-auto w-full max-w-md space-y-6">
               <Field
                 label="Create a new password"
                 value={recoveryPassword}
@@ -495,7 +496,7 @@ function LoginPage() {
               </Button>
               <button
                 type="button"
-                className={`${textButtonClassName} mx-auto block`}
+                className={`${textButtonClassName} mx-auto block pt-1`}
                 onClick={goToLogin}
               >
                 Back to Login
