@@ -85,6 +85,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "The modern documents creator for business correspondence. Create polished, branded business documents in seconds with AI writing assistance and multi-format export." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://www.zuridoc.com" },
+      { property: "og:image", content: "https://www.zuridoc.com/icon.png" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Zuridoc" },
       { name: "twitter:title", content: "Zuridoc - Create polished documents in seconds" },
@@ -94,6 +95,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         rel: "canonical",
         href: "https://www.zuridoc.com",
+      },
+      {
+        rel: "icon",
+        href: "/favicon.ico",
+        sizes: "any",
+      },
+      {
+        rel: "icon",
+        type: "image/svg+xml",
+        href: "/favicon.svg",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/apple-touch-icon.png",
+      },
+      {
+        rel: "manifest",
+        href: "/site.webmanifest",
       },
       {
         rel: "stylesheet",
