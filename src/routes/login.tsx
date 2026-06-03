@@ -236,13 +236,16 @@ function LoginPage() {
     });
     setLoading(false);
 
-    if (error) toast.error(error.message);
-    else {
-      setRecoveryPassword("");
-      setRecoveryPasswordConfirm("");
-      setViewState("new-password");
-      toast.success("Code verified.");
+    if (error) {
+      setRecoveryCode("");
+      toast.error(getRecoveryCodeErrorMessage(error.message));
+      return;
     }
+
+    setRecoveryPassword("");
+    setRecoveryPasswordConfirm("");
+    setViewState("new-password");
+    toast.success("Code verified.");
   };
 
   const confirmPasswordReset = async (e?: React.FormEvent) => {
@@ -461,6 +464,9 @@ function LoginPage() {
                   ))}
                 </InputOTPGroup>
               </InputOTP>
+              <p className="text-center text-sm leading-6 text-slate-500">
+                Use the newest reset email. If you clicked the email reset link, the code is already used and you can create a new password there.
+              </p>
               <Button
                 size="lg"
                 className={primaryButtonClassName}
@@ -536,6 +542,14 @@ function LoginPage() {
       </Card>
     </div>
   );
+}
+
+function getRecoveryCodeErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("expired") || normalized.includes("invalid")) {
+    return "This reset code is expired or already used. Use the newest email code, or click Resend Code for a fresh one.";
+  }
+  return message;
 }
 
 function getCardTitle(viewState: ViewState, isSignUp: boolean) {
