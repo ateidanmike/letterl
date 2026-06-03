@@ -61,8 +61,8 @@ const emptyBrand: Brand = {
   website: "",
   address: "",
   logo_url: null,
-  primary_color: "#1E40AF",
-  accent_color: "#16A34A",
+  primary_color: "#0067ec",
+  accent_color: "#011b43",
   watermark_text: null,
 };
 

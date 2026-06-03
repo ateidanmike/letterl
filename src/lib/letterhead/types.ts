@@ -62,11 +62,11 @@ export type ThemePreset = {
 };
 
 export const THEME_PRESETS: ThemePreset[] = [
-  { id: "classic", name: "Classic", template: "classic", font_family: "Lora", primary_color: "#1E3A8A", accent_color: "#16A34A" },
-  { id: "modern", name: "Modern", template: "left-modern", font_family: "Inter", primary_color: "#0F172A", accent_color: "#F59E0B" },
-  { id: "minimal", name: "Minimal", template: "minimal", font_family: "Inter", primary_color: "#0F172A", accent_color: "#64748B" },
-  { id: "executive", name: "Executive", template: "executive", font_family: "Playfair Display", primary_color: "#111827", accent_color: "#B45309" },
-  { id: "creative", name: "Creative", template: "bold-banner", font_family: "Montserrat", primary_color: "#7C3AED", accent_color: "#EC4899" },
+  { id: "classic", name: "Classic", template: "classic", font_family: "Lora", primary_color: "#0067ec", accent_color: "#011b43" },
+  { id: "modern", name: "Modern", template: "left-modern", font_family: "Inter", primary_color: "#0067ec", accent_color: "#011b43" },
+  { id: "minimal", name: "Minimal", template: "minimal", font_family: "Inter", primary_color: "#0067ec", accent_color: "#011b43" },
+  { id: "executive", name: "Executive", template: "executive", font_family: "Playfair Display", primary_color: "#0067ec", accent_color: "#011b43" },
+  { id: "creative", name: "Creative", template: "bold-banner", font_family: "Montserrat", primary_color: "#0067ec", accent_color: "#011b43" },
 ];
 
 export const TEMPLATES: { id: TemplateId; name: string; description: string }[] = [
@@ -96,8 +96,8 @@ export const DEFAULT_LETTERHEAD: Letterhead = {
   template: "classic",
   font_family: "Inter",
   font_size: 11,
-  primary_color: "#1E40AF",
-  accent_color: "#16A34A",
+  primary_color: "#0067ec",
+  accent_color: "#011b43",
   letter_date: new Date().toISOString().slice(0, 10),
   recipient: "",
   subject: "",

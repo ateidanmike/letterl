@@ -23,7 +23,7 @@ type BrandRow = {
 };
 const empty: BrandRow = {
   company_name: "", phone: "", email: "", website: "", address: "",
-  logo_path: null, primary_color: "#1E40AF", accent_color: "#16A34A", watermark_text: null,
+  logo_path: null, primary_color: "#0067ec", accent_color: "#011b43", watermark_text: null,
 };
 
 function BrandPage() {
