@@ -92,15 +92,16 @@ function BrandPage() {
   const set = <K extends keyof BrandRow>(k: K, v: BrandRow[K]) => setBrand((b) => ({ ...b, [k]: v }));
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="text-2xl font-bold">Brand</h1>
+    <div className="ambient-bg min-h-screen">
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
+      <h1 className="text-2xl font-bold leading-tight sm:text-3xl">Brand</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         These details appear on every letterhead. You can override colors per letter in the editor.
       </p>
       <Card className="mt-6">
         <CardHeader><CardTitle>Logo</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex h-32 items-center justify-center rounded-lg border-2 border-dashed bg-muted/30">
+          <div className="flex min-h-32 items-center justify-center rounded-lg border-2 border-dashed bg-muted/30 p-4">
             {logoUrl ? (
               <img src={logoUrl} alt="logo" className="max-h-28 object-contain" />
             ) : (
@@ -113,7 +114,7 @@ function BrandPage() {
             <Upload className="mr-2 h-4 w-4" /> Upload logo
           </Button>
           {logoUrl && (
-            <Button variant="ghost" onClick={autoExtractColors} className="ml-2">
+            <Button variant="ghost" onClick={autoExtractColors} className="mt-2 sm:ml-2 sm:mt-0">
               <Wand2 className="mr-2 h-4 w-4" /> Auto-extract colors
             </Button>
           )}
@@ -121,12 +122,12 @@ function BrandPage() {
       </Card>
       <Card className="mt-6">
         <CardHeader><CardTitle>Company details</CardTitle></CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+        <CardContent className="grid gap-4 sm:grid-cols-2">
           <Field label="Company name" value={brand.company_name} onChange={(v) => set("company_name", v)} />
           <Field label="Phone" value={brand.phone} onChange={(v) => set("phone", v)} />
           <Field label="Email" value={brand.email} onChange={(v) => set("email", v)} />
           <Field label="Website" value={brand.website} onChange={(v) => set("website", v)} />
-          <div className="md:col-span-2">
+          <div className="sm:col-span-2">
             <Label>Address</Label>
             <Textarea value={brand.address} onChange={(e) => set("address", e.target.value)} rows={2} />
           </div>
@@ -135,8 +136,9 @@ function BrandPage() {
           <Field label="Watermark text (optional)" value={brand.watermark_text ?? ""} onChange={(v) => set("watermark_text", v || null)} />
         </CardContent>
       </Card>
-      <div className="mt-6 flex justify-end">
-        <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save brand"}</Button>
+      <div className="mt-6 flex justify-stretch sm:justify-end">
+        <Button onClick={save} disabled={saving} className="w-full sm:w-auto">{saving ? "Saving…" : "Save brand"}</Button>
+      </div>
       </div>
     </div>
   );

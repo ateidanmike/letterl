@@ -291,14 +291,14 @@ function Editor() {
 
   return (
     <div className="ambient-bg min-h-screen">
-    <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 lg:grid-cols-[420px_1fr]">
+    <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[minmax(320px,420px)_1fr]">
       {/* Controls */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back
           </Button>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex">
             <Button size="sm" onClick={save} disabled={saving}>
               <Save className="mr-2 h-4 w-4" /> {saving ? "Saving…" : "Save"}
             </Button>
@@ -353,7 +353,7 @@ function Editor() {
         </Section>
 
         <Section title="Template">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {TEMPLATES.map((t) => (
               <button
                 key={t.id}
@@ -372,7 +372,7 @@ function Editor() {
         </Section>
 
         <Section title="Page setup">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <div>
               <Label className="text-xs">Format</Label>
               <Select value={letter.page_format ?? "a4"} onValueChange={(v) => set("page_format", v as PageFormat)}>
@@ -394,11 +394,11 @@ function Editor() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <Label className="text-xs">Margin: {letter.margin_mm ?? 18} mm</Label>
               <Slider min={0} max={40} step={1} value={[letter.margin_mm ?? 18]} onValueChange={(v) => set("margin_mm", v[0])} />
             </div>
-            <label className="col-span-2 flex items-center gap-2 text-xs">
+            <label className="flex items-center gap-2 text-xs sm:col-span-2">
               <input
                 type="checkbox"
                 checked={!!letter.show_qr}
@@ -411,7 +411,7 @@ function Editor() {
 
         <Section title="Share link">
           <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <div>
                 <Label className="text-xs">Expires (optional)</Label>
                 <Input type="datetime-local" value={shareExpiry} onChange={(e) => setShareExpiry(e.target.value)} />
@@ -431,7 +431,7 @@ function Editor() {
         </Section>
 
         <Section title="Typography">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <div>
               <Label className="text-xs">Font</Label>
               <Select value={letter.font_family} onValueChange={(v) => set("font_family", v)}>
@@ -459,7 +459,7 @@ function Editor() {
         </Section>
 
         <Section title="Colors">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <ColorRow label="Primary" value={letter.primary_color} onChange={(v) => set("primary_color", v)} />
             <ColorRow label="Accent" value={letter.accent_color} onChange={(v) => set("accent_color", v)} />
           </div>
@@ -492,7 +492,7 @@ function Editor() {
               />
             </div>
             <div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <Label className="text-xs">Body</Label>
                 <div className="flex gap-1">
                   {previousBody !== null && (
@@ -518,7 +518,7 @@ function Editor() {
                 placeholder="Dear Jane,&#10;&#10;..."
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <div>
                 <Label className="text-xs">Signature name</Label>
                 <Input
@@ -548,7 +548,7 @@ function Editor() {
       {/* Preview */}
       <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-auto">
         <Card className="glass border-0">
-          <CardContent className="flex justify-center bg-muted/30 p-6">
+          <CardContent className="overflow-auto bg-muted/30 p-3 sm:flex sm:justify-center sm:p-6">
             <LetterheadPreview
               key={previewKey}
               ref={previewRef}
@@ -588,7 +588,7 @@ function ColorRow({
   return (
     <div>
       <Label className="text-xs">{label}</Label>
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex">
         <input
           type="color"
           value={value}

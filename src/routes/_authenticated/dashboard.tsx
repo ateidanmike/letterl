@@ -53,26 +53,26 @@ function Dashboard() {
 
   return (
     <div className="ambient-bg min-h-screen">
-    <div className="mx-auto max-w-5xl px-6 py-10">
-      <div className="flex items-center justify-between rounded-2xl glass px-5 py-4">
-        <h1 className="text-2xl font-bold">Letterhead creator</h1>
-        <div className="flex items-center gap-2">
+    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
+      <div className="flex flex-col gap-4 rounded-2xl glass px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <h1 className="text-2xl font-bold leading-tight sm:text-3xl">Letterhead creator</h1>
+        <div className="flex w-full items-center gap-2 sm:w-auto">
           <ThemeToggle />
-          <Button onClick={create}><Plus className="mr-2 h-4 w-4" /> New letterhead</Button>
+          <Button onClick={create} className="flex-1 sm:flex-none"><Plus className="mr-2 h-4 w-4" /> New letterhead</Button>
         </div>
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search letterheads…"
-          className="max-w-xs glass-subtle border-0"
+          className="w-full glass-subtle border-0 sm:max-w-xs"
         />
         {(["All", ...Array.from(new Set(rows.map((r) => r.folder).filter(Boolean)))]).map((f) => (
           <button
             key={f}
             onClick={() => setFolder(f)}
-            className={`rounded-full px-3 py-1 text-xs transition ${folder === f ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
+            className={`min-h-9 rounded-full px-3 py-1 text-xs transition ${folder === f ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
           >
             {f}
           </button>
@@ -82,7 +82,7 @@ function Dashboard() {
         <p className="mt-8 text-muted-foreground">Loading…</p>
       ) : rows.length === 0 ? (
         <Card className="mt-8 glass border-0">
-          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+          <CardContent className="flex flex-col items-center gap-3 px-4 py-12 text-center sm:py-16">
             <FileText className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground">No letterheads yet.</p>
             <Button onClick={create}>Create your first one</Button>
@@ -95,14 +95,14 @@ function Dashboard() {
             .filter((r) => r.title.toLowerCase().includes(search.toLowerCase()))
             .map((r) => (
             <Card key={r.id} className="glass border-0 transition hover:-translate-y-0.5">
-              <CardContent className="flex items-center justify-between gap-4 py-4">
-                <Link to="/editor" search={{ id: r.id }} className="flex-1 text-left">
+              <CardContent className="flex flex-col items-start gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <Link to="/editor" search={{ id: r.id }} className="min-w-0 flex-1 text-left">
                   <div className="font-medium">{r.title}</div>
                   <div className="text-xs text-muted-foreground">
                     {r.folder} · {r.template} · updated {new Date(r.updated_at).toLocaleString()}
                   </div>
                 </Link>
-                <Button variant="ghost" size="icon" onClick={() => remove(r.id)}>
+                <Button variant="ghost" size="icon" className="self-end sm:self-center" onClick={() => remove(r.id)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </CardContent>

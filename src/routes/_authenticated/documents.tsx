@@ -65,11 +65,11 @@ function DocumentsPage() {
 
   return (
     <div className="ambient-bg min-h-screen">
-      <div className="mx-auto max-w-5xl px-6 py-10">
-        <div className="rounded-2xl glass px-6 py-5">
-          <h1 className="text-2xl font-bold">Business documents</h1>
+      <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
+        <div className="rounded-2xl glass px-4 py-5 sm:px-6">
+          <h1 className="text-2xl font-bold leading-tight sm:text-3xl">Business documents</h1>
           <p className="mt-1 text-sm text-muted-foreground">Create stunning invoices, receipts, quotations and delivery notes in seconds.</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {DOC_TYPES.map((t) => {
               const Icon = TYPE_ICON[t.id];
               return (
@@ -94,12 +94,12 @@ function DocumentsPage() {
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="mt-6 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
           {(["all", ...DOC_TYPES.map((t) => t.id)] as const).map((id) => (
             <button
               key={id}
               onClick={() => setFilter(id as DocType | "all")}
-              className={`rounded-full px-3 py-1 text-xs transition ${filter === id ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
+              className={`min-h-9 shrink-0 rounded-full px-3 py-1 text-xs transition ${filter === id ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
             >
               {id === "all" ? "All" : DOC_TYPES.find((t) => t.id === id)?.name}
             </button>
@@ -110,7 +110,7 @@ function DocumentsPage() {
           <p className="mt-8 text-muted-foreground">Loading…</p>
         ) : filtered.length === 0 ? (
           <Card className="mt-6 glass border-0">
-            <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+            <CardContent className="flex flex-col items-center gap-3 px-4 py-12 text-center sm:py-16">
               <FileText className="h-10 w-10 text-muted-foreground" />
               <p className="text-muted-foreground">No documents yet — pick a type above to start.</p>
             </CardContent>
@@ -121,8 +121,8 @@ function DocumentsPage() {
               const Icon = TYPE_ICON[r.doc_type];
               return (
                 <Card key={r.id} className="glass border-0 transition hover:-translate-y-0.5">
-                  <CardContent className="flex items-center justify-between gap-4 py-4">
-                    <Link to="/document-editor" search={{ id: r.id }} className="flex flex-1 items-center gap-3 text-left">
+                  <CardContent className="flex flex-col items-start gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <Link to="/document-editor" search={{ id: r.id }} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Icon className="h-4 w-4" />
                       </div>
@@ -133,7 +133,7 @@ function DocumentsPage() {
                         </div>
                       </div>
                     </Link>
-                    <Button variant="ghost" size="icon" onClick={() => remove(r.id)}>
+                    <Button variant="ghost" size="icon" className="self-end sm:self-center" onClick={() => remove(r.id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </CardContent>

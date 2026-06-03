@@ -125,13 +125,13 @@ function DocumentEditor() {
 
   return (
     <div className="ambient-bg min-h-screen">
-      <div className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[420px_1fr]">
+      <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[minmax(320px,420px)_1fr]">
         <aside className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/documents" })}>
               <ArrowLeft className="mr-1 h-4 w-4" /> Back
             </Button>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex">
               <Button size="sm" variant="outline" onClick={save} disabled={saving}>
                 <Save className="mr-1 h-4 w-4" /> {saving ? "Saving…" : "Save"}
               </Button>
@@ -145,7 +145,7 @@ function DocumentEditor() {
             <Field label="Title">
               <Input value={doc.title} onChange={(e) => setDoc({ ...doc, title: e.target.value })} />
             </Field>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Type">
                 <Select value={doc.doc_type} onValueChange={(v) => setDoc({ ...doc, doc_type: v as DocType })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -163,7 +163,7 @@ function DocumentEditor() {
                 </Select>
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Number"><Input value={doc.doc_number} onChange={(e) => setDoc({ ...doc, doc_number: e.target.value })} /></Field>
               <Field label="Currency">
                 <Select value={doc.currency} onValueChange={(v) => setDoc({ ...doc, currency: v })}>
@@ -174,11 +174,11 @@ function DocumentEditor() {
                 </Select>
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Issue date"><Input type="date" value={doc.issue_date ?? ""} onChange={(e) => setDoc({ ...doc, issue_date: e.target.value })} /></Field>
               <Field label="Due date"><Input type="date" value={doc.due_date ?? ""} onChange={(e) => setDoc({ ...doc, due_date: e.target.value })} /></Field>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Primary color"><Input type="color" value={doc.primary_color} onChange={(e) => setDoc({ ...doc, primary_color: e.target.value })} /></Field>
               <Field label="Accent color"><Input type="color" value={doc.accent_color} onChange={(e) => setDoc({ ...doc, accent_color: e.target.value })} /></Field>
             </div>
@@ -187,7 +187,7 @@ function DocumentEditor() {
           <Section title="From">
             <Input placeholder="Company name" value={doc.from_party.name} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, name: e.target.value } })} />
             <Textarea placeholder="Address" value={doc.from_party.address} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, address: e.target.value } })} />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <Input placeholder="Email" value={doc.from_party.email} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, email: e.target.value } })} />
               <Input placeholder="Phone" value={doc.from_party.phone} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, phone: e.target.value } })} />
             </div>
@@ -196,7 +196,7 @@ function DocumentEditor() {
           <Section title="To">
             <Input placeholder="Recipient name" value={doc.to_party.name} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, name: e.target.value } })} />
             <Textarea placeholder="Address" value={doc.to_party.address} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, address: e.target.value } })} />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <Input placeholder="Email" value={doc.to_party.email} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, email: e.target.value } })} />
               <Input placeholder="Phone" value={doc.to_party.phone} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, phone: e.target.value } })} />
             </div>
@@ -205,7 +205,7 @@ function DocumentEditor() {
           <Section title="Line items">
             <div className="space-y-2">
               {doc.items.map((it, i) => (
-                <div key={it.id} className="grid grid-cols-[1fr_60px_80px_28px] gap-1.5">
+                <div key={it.id} className="grid gap-1.5 sm:grid-cols-[1fr_60px_80px_28px]">
                   <Input placeholder="Description" value={it.description} onChange={(e) => updateItem(i, { description: e.target.value })} />
                   <Input type="number" min={0} value={it.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })} />
                   <Input type="number" min={0} step="0.01" value={it.price} onChange={(e) => updateItem(i, { price: Number(e.target.value) })} />
@@ -223,7 +223,7 @@ function DocumentEditor() {
           <Section title="Notes & terms">
             <Textarea placeholder="Notes" value={doc.notes} onChange={(e) => setDoc({ ...doc, notes: e.target.value })} />
             <Textarea placeholder="Terms & conditions" value={doc.terms} onChange={(e) => setDoc({ ...doc, terms: e.target.value })} />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <Input placeholder="Signed by" value={doc.signature_name} onChange={(e) => setDoc({ ...doc, signature_name: e.target.value })} />
               <Input placeholder="Title" value={doc.signature_title} onChange={(e) => setDoc({ ...doc, signature_title: e.target.value })} />
             </div>
