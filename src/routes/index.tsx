@@ -447,6 +447,8 @@ function Footer() {
           <a href="#workflow" className="transition hover:text-[#0067EC]">Workflow</a>
           <Link to="/login" className="transition hover:text-[#0067EC]">Sign in</Link>
           <Link to="/login" className="transition hover:text-[#0067EC]">Start Free</Link>
+          <Link to="/privacy-policy" className="transition hover:text-[#0067EC]">Privacy Policy</Link>
+          <Link to="/terms-of-service" className="transition hover:text-[#0067EC]">Terms of Service</Link>
         </div>
       </div>
     </footer>
