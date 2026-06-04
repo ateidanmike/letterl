@@ -36,6 +36,12 @@ export const DocumentPreview = forwardRef<HTMLDivElement, Props>(function Docume
         {doc.template === "classic" && <ClassicTemplate doc={doc} label={label} totals={totals} fmt={fmt} />}
         {doc.template === "minimal" && <MinimalTemplate doc={doc} label={label} totals={totals} fmt={fmt} />}
         {doc.template === "bold" && <BoldTemplate doc={doc} label={label} totals={totals} fmt={fmt} />}
+        {doc.template === "delivery_simple" && doc.doc_type === "delivery_note" && (
+          <DeliverySimpleTemplate doc={doc} label={label} totals={totals} fmt={fmt} />
+        )}
+        {doc.template === "delivery_simple" && doc.doc_type !== "delivery_note" && (
+          <ModernTemplate doc={doc} label={label} totals={totals} fmt={fmt} />
+        )}
       </div>
     </div>
   );
@@ -223,6 +229,133 @@ function MinimalTemplate({ doc, label, totals, fmt }: TplProps) {
       <ItemsTable doc={doc} fmt={fmt} color="#0f172a" />
       <Totals doc={doc} label={label} totals={totals} fmt={fmt} color={doc.primary_color} />
       <Footer doc={doc} />
+    </div>
+  );
+}
+
+
+function DeliverySimpleTemplate({ doc, label }: TplProps) {
+  const color = doc.primary_color || "#4f46a5";
+  const addressLines = [
+    doc.to_party.name || "NAME",
+    doc.to_party.address || "FULL ADDRESS\nCITY, STATE\nZIP/POSTAL CODE/COUNTRY",
+  ].filter(Boolean).join("\n");
+  const companyAddress = doc.from_party.address || "ADDRESS\nCITY/STATE/PROVINCE\nZIP/POSTAL CODE/COUNTRY";
+
+  return (
+    <div style={{ padding: "48px 64px 38px", color: "#1f2937", fontSize: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {doc.logo_url ? (
+            <img src={doc.logo_url} alt="" style={{ width: 52, height: 52, objectFit: "contain" }} />
+          ) : (
+            <div style={{ width: 48, height: 48, border: `5px solid ${color}`, display: "grid", placeItems: "center" }}>
+              <div style={{ width: 27, height: 27, border: `4px solid ${color}`, display: "grid", placeItems: "center" }}>
+                <div style={{ width: 10, height: 10, border: `3px solid ${color}` }} />
+              </div>
+            </div>
+          )}
+          <div style={{ color, fontSize: 18, fontWeight: 700, lineHeight: 1.1 }}>
+            <div>Logo</div>
+            <div>Name</div>
+          </div>
+        </div>
+        <div style={{ color, fontSize: 22, fontWeight: 800, marginTop: 34 }}>{label}</div>
+      </div>
+
+      <div style={{ marginTop: 26, color, fontWeight: 800 }}>Delivery Address</div>
+      <div style={{ marginTop: 18, whiteSpace: "pre-line", lineHeight: 1.18, fontWeight: 700 }}>
+        {addressLines}
+      </div>
+
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 44, tableLayout: "fixed" }}>
+        <tbody>
+          <tr>
+            <DeliveryMetaCell label="DATE" />
+            <DeliveryMetaCell value={doc.issue_date ?? ""} />
+            <DeliveryMetaCell label="ORDER #" />
+            <DeliveryMetaCell value={doc.doc_number} />
+          </tr>
+          <tr>
+            <DeliveryMetaCell label="SHIPPING DATE" />
+            <DeliveryMetaCell value={doc.due_date ?? ""} />
+            <DeliveryMetaCell label="SHIPPING TIME" />
+            <DeliveryMetaCell value="" />
+          </tr>
+        </tbody>
+      </table>
+
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 36, tableLayout: "fixed" }}>
+        <thead>
+          <tr>
+            <DeliveryTh width="24%">ITEM CODE</DeliveryTh>
+            <DeliveryTh width="58%">ITEM DESCRIPTION</DeliveryTh>
+            <DeliveryTh width="18%">TOTAL</DeliveryTh>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: Math.max(6, doc.items.length) }).map((_, i) => {
+            const item = doc.items[i];
+            return (
+              <tr key={item?.id ?? i} style={{ background: i % 2 === 0 ? "#f5f5f5" : "#ffffff" }}>
+                <DeliveryTd>{item ? String(i + 1).padStart(3, "0") : ""}</DeliveryTd>
+                <DeliveryTd align="left">{item?.description ?? ""}</DeliveryTd>
+                <DeliveryTd>{item ? item.quantity : ""}</DeliveryTd>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <div style={{ marginTop: 34, lineHeight: 1.8, fontSize: 11, fontWeight: 600 }}>
+        <div>Thank you for your order!</div>
+        <div>Please check all items carefully and notify us of any discrepancy within 24 hours.</div>
+      </div>
+
+      <div style={{ marginTop: 16, fontSize: 11 }}>Items Received by:</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 0.5fr", gap: 54, marginTop: 54, fontSize: 10 }}>
+        <SignatureLine label="Signature" />
+        <SignatureLine label="Print" />
+        <SignatureLine label="Date" />
+      </div>
+
+      <div style={{ marginTop: 42, textAlign: "center", fontSize: 9, lineHeight: 1.15, fontWeight: 700 }}>
+        <div>{doc.from_party.name || "COMPANY NAME"}</div>
+        <div style={{ whiteSpace: "pre-line", fontWeight: 600 }}>{companyAddress}</div>
+      </div>
+    </div>
+  );
+}
+
+function DeliveryMetaCell({ label, value }: { label?: string; value?: string }) {
+  return (
+    <td style={{ border: "2px solid #9ca3af", height: 30, textAlign: "center", verticalAlign: "middle", fontSize: 11, fontWeight: label ? 800 : 600, color: label ? "#4f46a5" : "#111827" }}>
+      {label ?? value}
+    </td>
+  );
+}
+
+function DeliveryTh({ children, width }: { children: React.ReactNode; width: string }) {
+  return (
+    <th style={{ border: "2px solid #9ca3af", width, height: 34, textAlign: "center", color: "#4f46a5", fontSize: 11, fontWeight: 800 }}>
+      {children}
+    </th>
+  );
+}
+
+function DeliveryTd({ children, align = "center" }: { children: React.ReactNode; align?: "left" | "center" }) {
+  return (
+    <td style={{ borderLeft: "2px solid #9ca3af", borderRight: "2px solid #9ca3af", height: 43, padding: "4px 10px", textAlign: align, verticalAlign: "middle", fontSize: 11 }}>
+      {children}
+    </td>
+  );
+}
+
+function SignatureLine({ label }: { label: string }) {
+  return (
+    <div>
+      <div style={{ borderTop: "2px solid #9ca3af", height: 4 }} />
+      <div>{label}</div>
     </div>
   );
 }

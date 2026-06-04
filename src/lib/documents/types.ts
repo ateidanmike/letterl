@@ -21,13 +21,14 @@ export type LineItem = {
   price: number;
 };
 
-export type DocTemplateId = "modern" | "classic" | "minimal" | "bold";
+export type DocTemplateId = "modern" | "classic" | "minimal" | "bold" | "delivery_simple";
 
 export const DOC_TEMPLATES: { id: DocTemplateId; name: string }[] = [
   { id: "modern", name: "Modern" },
   { id: "classic", name: "Classic" },
   { id: "minimal", name: "Minimal" },
   { id: "bold", name: "Bold" },
+  { id: "delivery_simple", name: "Delivery Note" },
 ];
 
 export type BusinessDoc = {

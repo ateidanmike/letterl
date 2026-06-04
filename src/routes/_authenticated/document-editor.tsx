@@ -35,6 +35,9 @@ function DocumentEditor() {
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const availableTemplates = DOC_TEMPLATES.filter((template) =>
+    doc.doc_type === "delivery_note" ? true : template.id !== "delivery_simple",
+  );
 
   useEffect(() => {
     if (!id || !user) return;
@@ -147,7 +150,14 @@ function DocumentEditor() {
             </Field>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Type">
-                <Select value={doc.doc_type} onValueChange={(v) => setDoc({ ...doc, doc_type: v as DocType })}>
+                <Select value={doc.doc_type} onValueChange={(v) => {
+                  const nextType = v as DocType;
+                  setDoc({
+                    ...doc,
+                    doc_type: nextType,
+                    template: nextType === "delivery_note" ? "delivery_simple" : doc.template === "delivery_simple" ? "modern" : doc.template,
+                  });
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {DOC_TYPES.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
@@ -158,7 +168,7 @@ function DocumentEditor() {
                 <Select value={doc.template} onValueChange={(v) => setDoc({ ...doc, template: v as DocTemplateId })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {DOC_TEMPLATES.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                    {availableTemplates.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </Field>

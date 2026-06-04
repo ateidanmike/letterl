@@ -290,22 +290,22 @@ function Editor() {
   }
 
   return (
-    <div className="ambient-bg min-h-screen">
-    <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[minmax(320px,420px)_1fr]">
+    <div className="ambient-bg min-h-screen overflow-x-hidden">
+    <div className="mx-auto grid w-full max-w-7xl gap-4 px-3 py-4 sm:gap-5 sm:px-6 sm:py-8 lg:grid-cols-[minmax(320px,420px)_1fr]">
       {/* Controls */}
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back
           </Button>
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            <Button size="sm" onClick={save} disabled={saving}>
-              <Save className="mr-2 h-4 w-4" /> {saving ? "Saving…" : "Save"}
+          <div className="grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2 sm:flex">
+            <Button size="sm" onClick={save} disabled={saving} className="min-w-0">
+              <Save className="mr-2 h-4 w-4 shrink-0" /> <span className="truncate">{saving ? "Saving…" : "Save"}</span>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="default">
-                  <Download className="mr-2 h-4 w-4" /> Export
+                <Button size="sm" variant="default" className="min-w-0">
+                  <Download className="mr-2 h-4 w-4 shrink-0" /> <span className="truncate">Export</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -546,7 +546,7 @@ function Editor() {
       </div>
 
       {/* Preview */}
-      <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-auto">
+      <div className="min-w-0 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-auto">
         <Card className="glass border-0">
           <CardContent className="overflow-auto bg-muted/30 p-3 sm:flex sm:justify-center sm:p-6">
             <LetterheadPreview
@@ -568,7 +568,7 @@ function Editor() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <Card className="glass border-0">
-      <CardContent className="p-4">
+      <CardContent className="min-w-0 p-3 sm:p-4">
         <h3 className="mb-3 text-sm font-semibold">{title}</h3>
         {children}
       </CardContent>
@@ -588,7 +588,7 @@ function ColorRow({
   return (
     <div>
       <Label className="text-xs">{label}</Label>
-      <div className="grid grid-cols-2 gap-2 sm:flex">
+      <div className="grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2 sm:flex">
         <input
           type="color"
           value={value}

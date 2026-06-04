@@ -64,12 +64,12 @@ export function AiPanel({ body, onApplyBody, onSubject }: Props) {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
+    <div className="min-w-0 space-y-3">
+      <div className="grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2">
         <div>
           <Label className="text-xs">Tone</Label>
           <Select value={tone} onValueChange={setTone}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full min-w-0"><SelectValue /></SelectTrigger>
             <SelectContent>
               {TONES.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
             </SelectContent>
@@ -78,7 +78,7 @@ export function AiPanel({ body, onApplyBody, onSubject }: Props) {
         <div>
           <Label className="text-xs">Language</Label>
           <Select value={language} onValueChange={setLanguage}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full min-w-0"><SelectValue /></SelectTrigger>
             <SelectContent>
               {LANGS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
             </SelectContent>
@@ -94,30 +94,30 @@ export function AiPanel({ body, onApplyBody, onSubject }: Props) {
           onChange={(e) => setPrompt(e.target.value)}
           placeholder='e.g. "Apology to a supplier for a 14-day payment delay; promise full payment Friday."'
         />
-        <Button size="sm" onClick={generate} disabled={busy !== null} className="mt-2 w-full">
-          <Sparkles className="mr-2 h-3 w-3" />
-          {busy === "generate" ? "Drafting…" : "Generate letter"}
+        <Button size="sm" onClick={generate} disabled={busy !== null} className="mt-2 w-full min-w-0">
+          <Sparkles className="mr-2 h-3 w-3 shrink-0" />
+          <span className="truncate">{busy === "generate" ? "Drafting…" : "Generate letter"}</span>
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button size="sm" variant="secondary" onClick={() => transform("tone")} disabled={busy !== null}>
-          <Type className="mr-1 h-3 w-3" /> Apply tone
+      <div className="grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2">
+        <Button size="sm" variant="secondary" onClick={() => transform("tone")} disabled={busy !== null} className="min-w-0">
+          <Type className="mr-1 h-3 w-3 shrink-0" /> <span className="truncate">Apply tone</span>
         </Button>
-        <Button size="sm" variant="secondary" onClick={() => transform("rewrite")} disabled={busy !== null}>
-          <Wand2 className="mr-1 h-3 w-3" /> Rewrite
+        <Button size="sm" variant="secondary" onClick={() => transform("rewrite")} disabled={busy !== null} className="min-w-0">
+          <Wand2 className="mr-1 h-3 w-3 shrink-0" /> <span className="truncate">Rewrite</span>
         </Button>
-        <Button size="sm" variant="secondary" onClick={() => transform("shorten")} disabled={busy !== null}>
-          <Minimize2 className="mr-1 h-3 w-3" /> Shorten
+        <Button size="sm" variant="secondary" onClick={() => transform("shorten")} disabled={busy !== null} className="min-w-0">
+          <Minimize2 className="mr-1 h-3 w-3 shrink-0" /> <span className="truncate">Shorten</span>
         </Button>
-        <Button size="sm" variant="secondary" onClick={() => transform("expand")} disabled={busy !== null}>
-          <Maximize2 className="mr-1 h-3 w-3" /> Expand
+        <Button size="sm" variant="secondary" onClick={() => transform("expand")} disabled={busy !== null} className="min-w-0">
+          <Maximize2 className="mr-1 h-3 w-3 shrink-0" /> <span className="truncate">Expand</span>
         </Button>
-        <Button size="sm" variant="secondary" onClick={() => transform("simplify")} disabled={busy !== null}>
+        <Button size="sm" variant="secondary" onClick={() => transform("simplify")} disabled={busy !== null} className="min-w-0">
           Simplify
         </Button>
-        <Button size="sm" variant="secondary" onClick={() => transform("translate")} disabled={busy !== null}>
-          <Languages className="mr-1 h-3 w-3" /> Translate
+        <Button size="sm" variant="secondary" onClick={() => transform("translate")} disabled={busy !== null} className="min-w-0">
+          <Languages className="mr-1 h-3 w-3 shrink-0" /> <span className="truncate">Translate</span>
         </Button>
       </div>
 
