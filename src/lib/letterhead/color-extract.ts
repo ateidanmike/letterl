@@ -1,37 +1,70 @@
-// Extract a small palette from an image URL using a downscaled canvas.
+// Extract dominant brand colors from a logo URL using a downscaled canvas.
 export async function extractPalette(url: string): Promise<{ primary: string; accent: string } | null> {
   try {
     const img = await loadImage(url);
     const canvas = document.createElement("canvas");
-    const W = 60;
-    const ratio = img.height / img.width;
-    canvas.width = W;
-    canvas.height = Math.max(1, Math.round(W * ratio));
-    const ctx = canvas.getContext("2d");
+    const maxSize = 180;
+    const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return null;
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    const buckets = new Map<string, { count: number; r: number; g: number; b: number }>();
+    const buckets = new Map<string, { count: number; r: number; g: number; b: number; saturation: number }>();
+
     for (let i = 0; i < data.length; i += 4) {
       const a = data[i + 3];
-      if (a < 200) continue;
-      const r = data[i], g = data[i + 1], b = data[i + 2];
-      // skip near-white and near-black
-      const max = Math.max(r, g, b), min = Math.min(r, g, b);
-      if (max > 240 && min > 240) continue;
-      if (max < 25) continue;
-      const key = `${r >> 4},${g >> 4},${b >> 4}`;
-      const e = buckets.get(key);
-      if (e) { e.count++; e.r += r; e.g += g; e.b += b; }
-      else buckets.set(key, { count: 1, r, g, b });
+      if (a < 160) continue;
+
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const lightness = (max + min) / 510;
+      const saturation = max === min ? 0 : (max - min) / (255 * (1 - Math.abs(2 * lightness - 1)));
+
+      if (lightness > 0.94 || lightness < 0.04 || saturation < 0.12) continue;
+
+      // 8-level buckets preserve the visual logo color better than broad 16-level averaging.
+      const key = `${r >> 3},${g >> 3},${b >> 3}`;
+      const entry = buckets.get(key);
+      if (entry) {
+        entry.count++;
+        entry.r += r;
+        entry.g += g;
+        entry.b += b;
+        entry.saturation += saturation;
+      } else {
+        buckets.set(key, { count: 1, r, g, b, saturation });
+      }
     }
-    const sorted = [...buckets.values()].sort((a, b) => b.count - a.count);
-    if (!sorted.length) return null;
-    const top = (i: number) => {
-      const e = sorted[Math.min(i, sorted.length - 1)];
-      return rgbToHex(Math.round(e.r / e.count), Math.round(e.g / e.count), Math.round(e.b / e.count));
-    };
-    return { primary: top(0), accent: top(Math.min(2, sorted.length - 1)) };
+
+    const colors = [...buckets.values()]
+      .map((entry) => {
+        const r = Math.round(entry.r / entry.count);
+        const g = Math.round(entry.g / entry.count);
+        const b = Math.round(entry.b / entry.count);
+        const saturation = entry.saturation / entry.count;
+        return {
+          r,
+          g,
+          b,
+          count: entry.count,
+          saturation,
+          score: entry.count * (1 + saturation),
+          hex: rgbToHex(r, g, b),
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    if (!colors.length) return null;
+
+    const primary = colors[0];
+    const accent = colors.find((color) => colorDistance(color, primary) > 48) ?? colors[1] ?? primary;
+    return { primary: primary.hex, accent: accent.hex };
   } catch {
     return null;
   }
@@ -45,6 +78,10 @@ function loadImage(url: string): Promise<HTMLImageElement> {
     img.onerror = rej;
     img.src = url;
   });
+}
+
+function colorDistance(a: { r: number; g: number; b: number }, b: { r: number; g: number; b: number }) {
+  return Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
 }
 
 function rgbToHex(r: number, g: number, b: number) {

@@ -28,9 +28,14 @@ export const Route = createFileRoute("/_authenticated/document-editor")({
 });
 
 function DocumentEditor() {
+  const { id } = Route.useSearch();
+  return <BusinessDocumentEditor documentId={id} />;
+}
+
+export function BusinessDocumentEditor({ documentId }: { documentId?: string }) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { id } = Route.useSearch();
+  const id = documentId;
   const [doc, setDoc] = useState<BusinessDoc>(DEFAULT_DOC);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -46,45 +51,62 @@ function DocumentEditor() {
         .from("business_documents").select("*").eq("id", id).single();
       if (error) toast.error(error.message);
       const raw = data as unknown as Record<string, unknown> | null;
-      if (raw) {
-        const items = Array.isArray(raw.items) ? (raw.items as LineItem[]) : [];
-        setDoc({
-          ...DEFAULT_DOC,
-          ...(raw as unknown as BusinessDoc),
-          items: items.length ? items : DEFAULT_DOC.items,
-          from_party: { ...DEFAULT_DOC.from_party, ...((raw.from_party as object) ?? {}) },
-          to_party: { ...DEFAULT_DOC.to_party, ...((raw.to_party as object) ?? {}) },
-        });
-      }
-      // load brand for logo + defaults
+
       const { data: brand } = await supabase.from("brands").select("*").eq("user_id", user.id).maybeSingle();
       let logoUrl: string | null = null;
       if (brand?.logo_path) {
         const { data: signed } = await supabase.storage.from("logos").createSignedUrl(brand.logo_path, 3600);
         logoUrl = signed?.signedUrl ?? null;
       }
-      if (brand && !raw) {
+
+      const brandFromParty = brand ? {
+        name: brand.company_name ?? "",
+        address: brand.address ?? "",
+        email: brand.email ?? "",
+        phone: brand.phone ?? "",
+        website: brand.website ?? "",
+      } : DEFAULT_DOC.from_party;
+
+      if (raw) {
+        const items = Array.isArray(raw.items) ? (raw.items as LineItem[]) : [];
+        const rawDoc = {
+          ...DEFAULT_DOC,
+          ...(raw as unknown as BusinessDoc),
+          items: items.length ? items : DEFAULT_DOC.items,
+          from_party: { ...DEFAULT_DOC.from_party, ...((raw.from_party as object) ?? {}) },
+          to_party: { ...DEFAULT_DOC.to_party, ...((raw.to_party as object) ?? {}) },
+        };
+        const shouldUseBrandPrimary = !rawDoc.primary_color || rawDoc.primary_color === DEFAULT_DOC.primary_color || rawDoc.primary_color.toLowerCase() === "#2563eb";
+        const shouldUseBrandAccent = !rawDoc.accent_color || rawDoc.accent_color === DEFAULT_DOC.accent_color || rawDoc.accent_color.toLowerCase() === "#0ea5e9";
+        setDoc({
+          ...rawDoc,
+          logo_url: rawDoc.logo_url ?? logoUrl,
+          primary_color: shouldUseBrandPrimary ? brand?.primary_color ?? rawDoc.primary_color : rawDoc.primary_color,
+          accent_color: shouldUseBrandAccent ? brand?.accent_color ?? rawDoc.accent_color : rawDoc.accent_color,
+          from_party: {
+            ...rawDoc.from_party,
+            name: rawDoc.from_party.name || brandFromParty.name,
+            address: rawDoc.from_party.address || brandFromParty.address,
+            email: rawDoc.from_party.email || brandFromParty.email,
+            phone: rawDoc.from_party.phone || brandFromParty.phone,
+            website: rawDoc.from_party.website || brandFromParty.website,
+          },
+        });
+      } else if (brand) {
         setDoc((d) => ({
           ...d,
           logo_url: logoUrl,
           primary_color: brand.primary_color ?? d.primary_color,
           accent_color: brand.accent_color ?? d.accent_color,
-          from_party: {
-            name: brand.company_name ?? "",
-            address: brand.address ?? "",
-            email: brand.email ?? "",
-            phone: brand.phone ?? "",
-          },
+          from_party: brandFromParty,
         }));
-      } else if (brand && raw) {
-        setDoc((d) => ({ ...d, logo_url: d.logo_url ?? logoUrl }));
       }
       setLoaded(true);
     })();
   }, [id, user]);
 
-  const save = async () => {
-    if (!id) return;
+  const save = async ({ quiet = false }: { quiet?: boolean } = {}) => {
+    if (!id) return true;
     setSaving(true);
     const { error } = await supabase.from("business_documents").update({
       doc_type: doc.doc_type,
@@ -107,14 +129,20 @@ function DocumentEditor() {
       signature_title: doc.signature_title,
     }).eq("id", id);
     setSaving(false);
-    if (error) toast.error(error.message); else toast.success("Saved");
+    if (error) {
+      toast.error(error.message);
+      return false;
+    }
+    if (!quiet) toast.success("Saved");
+    return true;
   };
 
   const download = async () => {
     if (!previewRef.current) return;
+    const saved = await save({ quiet: true });
+    if (!saved) return;
     await exportPdf(previewRef.current, `${doc.title || "document"}.pdf`);
   };
-
   const updateItem = (idx: number, patch: Partial<LineItem>) => {
     setDoc((d) => ({ ...d, items: d.items.map((it, i) => (i === idx ? { ...it, ...patch } : it)) }));
   };
@@ -135,10 +163,10 @@ function DocumentEditor() {
               <ArrowLeft className="mr-1 h-4 w-4" /> Back
             </Button>
             <div className="grid grid-cols-2 gap-2 sm:flex">
-              <Button size="sm" variant="outline" onClick={save} disabled={saving}>
+              <Button size="sm" variant="outline" onClick={() => void save()} disabled={saving}>
                 <Save className="mr-1 h-4 w-4" /> {saving ? "Saving…" : "Save"}
               </Button>
-              <Button size="sm" onClick={download}>
+              <Button size="sm" onClick={download} disabled={saving}>
                 <Download className="mr-1 h-4 w-4" /> PDF
               </Button>
             </div>
@@ -201,6 +229,7 @@ function DocumentEditor() {
               <Input placeholder="Email" value={doc.from_party.email} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, email: e.target.value } })} />
               <Input placeholder="Phone" value={doc.from_party.phone} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, phone: e.target.value } })} />
             </div>
+            <Input placeholder="Website" value={doc.from_party.website ?? ""} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, website: e.target.value } })} />
           </Section>
 
           <Section title="To">

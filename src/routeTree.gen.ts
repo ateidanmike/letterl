@@ -20,6 +20,7 @@ import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDocumentEditorRouteImport } from './routes/_authenticated/document-editor'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBrandRouteImport } from './routes/_authenticated/brand'
+import { Route as AuthenticatedDocumentSlugRouteImport } from './routes/_authenticated/document.$slug'
 
 const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
   id: '/terms-of-service',
@@ -76,6 +77,12 @@ const AuthenticatedBrandRoute = AuthenticatedBrandRouteImport.update({
   path: '/brand',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDocumentSlugRoute =
+  AuthenticatedDocumentSlugRouteImport.update({
+    id: '/document/$slug',
+    path: '/document/$slug',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/editor': typeof AuthenticatedEditorRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/document/$slug': typeof AuthenticatedDocumentSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -100,6 +108,7 @@ export interface FileRoutesByTo {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/editor': typeof AuthenticatedEditorRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/document/$slug': typeof AuthenticatedDocumentSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -114,6 +123,7 @@ export interface FileRoutesById {
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/editor': typeof AuthenticatedEditorRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/_authenticated/document/$slug': typeof AuthenticatedDocumentSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/editor'
     | '/auth/confirm'
+    | '/document/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/editor'
     | '/auth/confirm'
+    | '/document/$slug'
   id:
     | '__root__'
     | '/'
@@ -153,6 +165,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents'
     | '/_authenticated/editor'
     | '/auth/confirm'
+    | '/_authenticated/document/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBrandRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/document/$slug': {
+      id: '/_authenticated/document/$slug'
+      path: '/document/$slug'
+      fullPath: '/document/$slug'
+      preLoaderRoute: typeof AuthenticatedDocumentSlugRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -252,6 +272,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDocumentEditorRoute: typeof AuthenticatedDocumentEditorRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedEditorRoute: typeof AuthenticatedEditorRoute
+  AuthenticatedDocumentSlugRoute: typeof AuthenticatedDocumentSlugRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -260,6 +281,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDocumentEditorRoute: AuthenticatedDocumentEditorRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedEditorRoute: AuthenticatedEditorRoute,
+  AuthenticatedDocumentSlugRoute: AuthenticatedDocumentSlugRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

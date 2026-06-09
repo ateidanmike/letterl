@@ -63,7 +63,7 @@ function Header({ doc }: { doc: BusinessDoc }) {
       <div>
         <div style={{ fontWeight: 700, fontSize: 18 }}>{doc.from_party.name || "Your Company"}</div>
         <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "pre-line" }}>
-          {doc.from_party.address}
+          {[doc.from_party.address, doc.from_party.website].filter(Boolean).join("\n")}
         </div>
       </div>
     </div>
@@ -119,7 +119,7 @@ function Totals({ doc, totals, fmt, color }: TplProps & { color: string }) {
       {totals.discount > 0 && <Row label="Discount" value={`- ${fmt(totals.discount)}`} />}
       {doc.tax_rate > 0 && <Row label={`Tax (${doc.tax_rate}%)`} value={fmt(totals.tax)} />}
       <div style={{ background: color, color: "#fff", padding: "10px 12px", borderRadius: 6, marginTop: 6, display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
-        <span>Total</span>
+        <span>{doc.doc_type === "receipt" ? "Amount Paid" : "Total"}</span>
         <span>{fmt(totals.total)}</span>
       </div>
     </div>
@@ -215,6 +215,7 @@ function MinimalTemplate({ doc, label, totals, fmt }: TplProps) {
         <div style={{ fontSize: 11, color: "#64748b", textAlign: "right" }}>
           <div>{doc.from_party.name}</div>
           <div>{doc.from_party.email}</div>
+          {doc.from_party.website && <div>{doc.from_party.website}</div>}
         </div>
       </div>
       <div style={{ borderTop: `1px solid ${doc.primary_color}`, marginTop: 8 }} />

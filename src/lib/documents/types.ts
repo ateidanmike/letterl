@@ -12,6 +12,7 @@ export type Party = {
   address: string;
   email: string;
   phone: string;
+  website?: string;
 };
 
 export type LineItem = {
