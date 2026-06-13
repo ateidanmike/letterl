@@ -257,7 +257,7 @@ function DocumentsPage() {
                     <div className="font-semibold">{t.name}</div>
                     <div className="text-xs text-muted-foreground">{t.description}</div>
                   </div>
-                  <span className="mt-1 inline-flex items-center gap-1 text-xs text-primary opacity-0 transition group-hover:opacity-100">
+                  <span className="mt-1 inline-flex items-center gap-1 text-xs text-primary transition">
                     <Plus className="h-3 w-3" /> Create
                   </span>
                 </button>
@@ -266,12 +266,12 @@ function DocumentsPage() {
           </div>
         </div>
 
-        <div className="mt-6 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
+        <div className="mt-6 flex flex-wrap gap-2 pb-1">
           {(["all", ...DOC_TYPES.map((t) => t.id)] as const).map((id) => (
             <button
               key={id}
               onClick={() => setFilter(id as DocType | "all")}
-              className={`min-h-9 shrink-0 rounded-full px-3 py-1 text-xs transition ${filter === id ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
+              className={`min-h-9 flex-1 rounded-full px-3 py-1 text-xs transition sm:flex-none ${filter === id ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
             >
               {id === "all" ? "All" : DOC_TYPES.find((t) => t.id === id)?.name}
             </button>
@@ -293,34 +293,35 @@ function DocumentsPage() {
               const Icon = TYPE_ICON[r.doc_type];
               return (
                 <Card key={r.id} className="glass border-0 transition hover:-translate-y-0.5">
-                  <CardContent className="flex flex-col items-start gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <Link to="/document/$slug" params={{ slug: documentSlug(r) }} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <CardContent className="grid min-w-0 gap-3 px-3 py-4 sm:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                    <Link to="/document/$slug" params={{ slug: documentSlug(r) }} className="grid min-w-0 grid-cols-[36px_minmax(0,1fr)] items-start gap-3 text-left">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Icon className="h-4 w-4" />
                       </div>
-                      <div className="min-w-0">
-                        <div className="truncate font-medium">{r.title} <span className="text-xs text-muted-foreground">#{r.doc_number}</span></div>
-                        <div className="text-xs text-muted-foreground">
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="break-words font-medium leading-snug text-foreground">{r.title}</div>
+                        <div className="break-all text-[11px] font-medium text-muted-foreground sm:text-xs">#{r.doc_number}</div>
+                        <div className="text-xs leading-relaxed text-muted-foreground">
                           {DOC_TYPES.find((t) => t.id === r.doc_type)?.name} · {r.status} · updated {new Date(r.updated_at).toLocaleString()}
                         </div>
                       </div>
                     </Link>
-                    <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto sm:flex-nowrap">
+                    <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:grid-cols-none lg:auto-cols-max lg:grid-flow-col">
                       {r.doc_type === "invoice" && (
-                        <Button variant="outline" size="sm" onClick={() => createReceiptFromInvoice(r)}>
-                          <FilePlus2 className="h-4 w-4" /> Receipt
+                        <Button variant="outline" size="sm" onClick={() => createReceiptFromInvoice(r)} className="min-w-0 justify-center px-2 text-xs sm:text-sm">
+                          <FilePlus2 className="h-4 w-4 shrink-0" /> <span>Receipt</span>
                         </Button>
                       )}
-                      <Button asChild variant="outline" size="sm">
+                      <Button asChild variant="outline" size="sm" className="min-w-0 justify-center px-2 text-xs sm:text-sm">
                         <Link to="/document/$slug" params={{ slug: documentSlug(r) }}>
-                          <Edit className="h-4 w-4" /> Edit
+                          <Edit className="h-4 w-4 shrink-0" /> <span>Edit</span>
                         </Link>
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => downloadSaved(r)} disabled={downloadingId === r.id}>
-                        <Download className="h-4 w-4" /> {downloadingId === r.id ? "PDF..." : "PDF"}
+                      <Button variant="outline" size="sm" onClick={() => downloadSaved(r)} disabled={downloadingId === r.id} className="min-w-0 justify-center px-2 text-xs sm:text-sm">
+                        <Download className="h-4 w-4 shrink-0" /> <span>{downloadingId === r.id ? "PDF..." : "PDF"}</span>
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => remove(r.id)} aria-label="Delete document">
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                      <Button variant="outline" size="sm" onClick={() => remove(r.id)} aria-label="Delete document" className="min-w-0 justify-center px-2 text-xs sm:text-sm">
+                        <Trash2 className="h-4 w-4 shrink-0 text-destructive" /> <span>Delete</span>
                       </Button>
                     </div>
                   </CardContent>
@@ -333,3 +334,4 @@ function DocumentsPage() {
     </div>
   );
 }
+
