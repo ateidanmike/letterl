@@ -63,9 +63,7 @@ const recentDocuments = ["Employment Contract", "Business Proposal", "NDA Agreem
 
 const landingNavItems = [
   { label: "How it works", href: "#how-it-works" },
-  { label: "Templates", href: "#templates" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Templates", href: "#templates" },  { label: "FAQ", href: "#faq" },
 ];
 
 const stats = [
@@ -122,9 +120,7 @@ function Index() {
   return (
     <div className="min-h-screen scroll-smooth bg-white text-[#111827]">
       <Hero primaryHref={primaryHref} user={Boolean(user)} />
-      <main>
-        <TrustBand />
-        <HowItWorksSection />
+      <main>        <HowItWorksSection />
         <TemplatesShowcase primaryHref={primaryHref} />
         <LivePreviewSection />
         <FeatureSection />
@@ -634,7 +630,15 @@ function PricingSection({ primaryHref }: { primaryHref: string }) {
 
 function SecurityFaqSection() {
   const securityItems = ["Encrypted Storage", "GDPR Ready", "Secure Authentication", "Data Ownership", "Private Documents"];
-  const integrations = ["Google Drive", "Dropbox", "OneDrive", "Slack", "Notion", "Zapier", "Supabase"];
+  const integrations = [
+    { name: "Google Drive", logo: "https://cdn.simpleicons.org/googledrive" },
+    { name: "Dropbox", logo: "https://cdn.simpleicons.org/dropbox" },
+    { name: "OneDrive", logo: "https://cdn.simpleicons.org/microsoftonedrive" },
+    { name: "Slack", logo: "https://cdn.simpleicons.org/slack" },
+    { name: "Notion", logo: "https://cdn.simpleicons.org/notion" },
+    { name: "Zapier", logo: "https://cdn.simpleicons.org/zapier" },
+    { name: "Supabase", logo: "https://cdn.simpleicons.org/supabase" },
+  ];
   return (
     <section id="faq" className="bg-[#F8FAFC] px-5 py-20 sm:px-8">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
@@ -642,7 +646,15 @@ function SecurityFaqSection() {
           <ShieldCheck className="h-10 w-10 text-[#0067EC]" />
           <h2 className="mt-5 text-3xl font-semibold text-[#011B43]">Security, privacy, and integrations.</h2>
           <div className="mt-6 grid gap-3">{securityItems.map((item) => <div key={item} className="flex items-center gap-3 rounded-lg bg-[#F8FAFC] p-4 font-semibold text-[#011B43]"><ShieldCheck className="h-5 w-5 text-[#0067EC]" />{item}</div>)}</div>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">{integrations.map((item) => <div key={item} className="rounded-lg border border-slate-200 p-3 text-sm font-semibold text-[#011B43]">{item}<span className="ml-2 text-xs font-medium text-slate-500">Coming soon</span></div>)}</div>
+                    <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            {integrations.map((item) => (
+              <div key={item.name} className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 text-sm font-semibold text-[#011B43]">
+                <img src={item.logo} alt="" className="h-5 w-5 shrink-0 object-contain" loading="lazy" />
+                <span>{item.name}</span>
+                <span className="text-xs font-medium text-slate-500">Coming soon</span>
+              </div>
+            ))}
+          </div>
         </div>
         <div>
           <SectionHeader eyebrow="FAQ" title="Remove objections before signup." />

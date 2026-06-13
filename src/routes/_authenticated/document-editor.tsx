@@ -39,10 +39,60 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
   const [doc, setDoc] = useState<BusinessDoc>(DEFAULT_DOC);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [editingBrandDetails, setEditingBrandDetails] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const lastAutosavedRef = useRef("");
+  const autosaveTimerRef = useRef<number | null>(null);
+  const draftKey = id ? `zuridoc:business-document-draft:${id}` : null;
   const availableTemplates = DOC_TEMPLATES.filter((template) =>
     doc.doc_type === "delivery_note" ? true : template.id !== "delivery_simple",
   );
+
+
+  const documentPayload = (currentDoc: BusinessDoc) => ({
+    doc_type: currentDoc.doc_type,
+    doc_number: currentDoc.doc_number,
+    title: currentDoc.title,
+    template: currentDoc.template,
+    issue_date: currentDoc.issue_date,
+    due_date: currentDoc.due_date,
+    currency: currentDoc.currency,
+    from_party: currentDoc.from_party,
+    to_party: currentDoc.to_party,
+    items: currentDoc.items,
+    tax_rate: currentDoc.tax_rate,
+    discount: currentDoc.discount,
+    notes: currentDoc.notes,
+    terms: currentDoc.terms,
+    primary_color: currentDoc.primary_color,
+    accent_color: currentDoc.accent_color,
+    signature_name: currentDoc.signature_name,
+    signature_title: currentDoc.signature_title,
+    status: "draft",
+  });
+
+  const mergeStoredDraft = (serverDoc: BusinessDoc, serverUpdatedAt?: unknown) => {
+    if (!draftKey) return serverDoc;
+    try {
+      const stored = window.localStorage.getItem(draftKey);
+      if (!stored) return serverDoc;
+      const parsed = JSON.parse(stored) as { updatedAt?: string; doc?: Partial<BusinessDoc> };
+      if (!parsed.doc || !parsed.updatedAt) return serverDoc;
+      const localTime = new Date(parsed.updatedAt).getTime();
+      const serverTime = typeof serverUpdatedAt === "string" ? new Date(serverUpdatedAt).getTime() : 0;
+      if (!Number.isFinite(localTime) || localTime <= serverTime) return serverDoc;
+      return {
+        ...serverDoc,
+        ...parsed.doc,
+        from_party: { ...serverDoc.from_party, ...(parsed.doc.from_party ?? {}) },
+        to_party: { ...serverDoc.to_party, ...(parsed.doc.to_party ?? {}) },
+        items: parsed.doc.items?.length ? parsed.doc.items : serverDoc.items,
+      };
+    } catch {
+      return serverDoc;
+    }
+  };
 
   useEffect(() => {
     if (!id || !user) return;
@@ -78,11 +128,12 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
         };
         const shouldUseBrandPrimary = !rawDoc.primary_color || rawDoc.primary_color === DEFAULT_DOC.primary_color || rawDoc.primary_color.toLowerCase() === "#2563eb";
         const shouldUseBrandAccent = !rawDoc.accent_color || rawDoc.accent_color === DEFAULT_DOC.accent_color || rawDoc.accent_color.toLowerCase() === "#0ea5e9";
-        setDoc({
+        const nextDoc = mergeStoredDraft({
           ...rawDoc,
           logo_url: rawDoc.logo_url ?? logoUrl,
           primary_color: shouldUseBrandPrimary ? brand?.primary_color ?? rawDoc.primary_color : rawDoc.primary_color,
           accent_color: shouldUseBrandAccent ? brand?.accent_color ?? rawDoc.accent_color : rawDoc.accent_color,
+          terms: rawDoc.terms || DEFAULT_DOC.terms,
           from_party: {
             ...rawDoc.from_party,
             name: rawDoc.from_party.name || brandFromParty.name,
@@ -91,7 +142,9 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
             phone: rawDoc.from_party.phone || brandFromParty.phone,
             website: rawDoc.from_party.website || brandFromParty.website,
           },
-        });
+        }, raw.updated_at);
+        lastAutosavedRef.current = JSON.stringify(nextDoc);
+        setDoc(nextDoc);
       } else if (brand) {
         setDoc((d) => ({
           ...d,
@@ -108,26 +161,7 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
   const save = async ({ quiet = false }: { quiet?: boolean } = {}) => {
     if (!id) return true;
     setSaving(true);
-    const { error } = await supabase.from("business_documents").update({
-      doc_type: doc.doc_type,
-      doc_number: doc.doc_number,
-      title: doc.title,
-      template: doc.template,
-      issue_date: doc.issue_date,
-      due_date: doc.due_date,
-      currency: doc.currency,
-      from_party: doc.from_party,
-      to_party: doc.to_party,
-      items: doc.items,
-      tax_rate: doc.tax_rate,
-      discount: doc.discount,
-      notes: doc.notes,
-      terms: doc.terms,
-      primary_color: doc.primary_color,
-      accent_color: doc.accent_color,
-      signature_name: doc.signature_name,
-      signature_title: doc.signature_title,
-    }).eq("id", id);
+    const { error } = await supabase.from("business_documents").update(documentPayload(doc)).eq("id", id);
     setSaving(false);
     if (error) {
       toast.error(error.message);
@@ -137,6 +171,63 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
     return true;
   };
 
+  useEffect(() => {
+    if (!loaded || !id || !draftKey) return;
+
+    const serialized = JSON.stringify(doc);
+    const updatedAt = new Date().toISOString();
+    window.localStorage.setItem(draftKey, JSON.stringify({ updatedAt, doc }));
+
+    if (serialized === lastAutosavedRef.current) {
+      setAutosaveStatus("saved");
+      return;
+    }
+
+    setAutosaveStatus("saving");
+    if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
+
+    autosaveTimerRef.current = window.setTimeout(async () => {
+      const snapshot = doc;
+      const snapshotJson = JSON.stringify(snapshot);
+      const { error } = await supabase.from("business_documents").update(documentPayload(snapshot)).eq("id", id);
+      if (error) {
+        setAutosaveStatus("error");
+        return;
+      }
+      lastAutosavedRef.current = snapshotJson;
+      setAutosaveStatus("saved");
+      window.localStorage.setItem(draftKey, JSON.stringify({ updatedAt: new Date().toISOString(), doc: snapshot }));
+    }, 900);
+
+    return () => {
+      if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
+    };
+  }, [doc, draftKey, id, loaded]);
+
+  useEffect(() => {
+    if (!loaded || !id || !draftKey) return;
+
+    const persistDraftBeforeExit = () => {
+      window.localStorage.setItem(draftKey, JSON.stringify({ updatedAt: new Date().toISOString(), doc }));
+      if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
+      if (JSON.stringify(doc) !== lastAutosavedRef.current) {
+        void supabase.from("business_documents").update(documentPayload(doc)).eq("id", id);
+      }
+    };
+
+    const saveOnVisibilityChange = () => {
+      if (document.visibilityState === "hidden") persistDraftBeforeExit();
+    };
+
+    window.addEventListener("pagehide", persistDraftBeforeExit);
+    window.addEventListener("beforeunload", persistDraftBeforeExit);
+    document.addEventListener("visibilitychange", saveOnVisibilityChange);
+    return () => {
+      window.removeEventListener("pagehide", persistDraftBeforeExit);
+      window.removeEventListener("beforeunload", persistDraftBeforeExit);
+      document.removeEventListener("visibilitychange", saveOnVisibilityChange);
+    };
+  }, [doc, draftKey, id, loaded]);
   const download = async () => {
     if (!previewRef.current) return;
     const saved = await save({ quiet: true });
@@ -216,20 +307,42 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
               <Field label="Issue date"><Input type="date" value={doc.issue_date ?? ""} onChange={(e) => setDoc({ ...doc, issue_date: e.target.value })} /></Field>
               <Field label="Due date"><Input type="date" value={doc.due_date ?? ""} onChange={(e) => setDoc({ ...doc, due_date: e.target.value })} /></Field>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Primary color"><Input type="color" value={doc.primary_color} onChange={(e) => setDoc({ ...doc, primary_color: e.target.value })} /></Field>
-              <Field label="Accent color"><Input type="color" value={doc.accent_color} onChange={(e) => setDoc({ ...doc, accent_color: e.target.value })} /></Field>
-            </div>
           </Section>
-
-          <Section title="From">
-            <Input placeholder="Company name" value={doc.from_party.name} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, name: e.target.value } })} />
-            <Textarea placeholder="Address" value={doc.from_party.address} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, address: e.target.value } })} />
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Input placeholder="Email" value={doc.from_party.email} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, email: e.target.value } })} />
-              <Input placeholder="Phone" value={doc.from_party.phone} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, phone: e.target.value } })} />
+          <Section title="Brand & from details">
+            <div className="rounded-lg border border-border/70 bg-background/60 p-3 text-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1">
+                  <p className="font-medium text-foreground">{doc.from_party.name || "Saved brand details"}</p>
+                  <p className="whitespace-pre-line text-xs text-muted-foreground">
+                    {[doc.from_party.email, doc.from_party.phone, doc.from_party.website].filter(Boolean).join(" / ") || "Brand contact details will be used by default."}
+                  </p>
+                  {doc.from_party.address ? <p className="whitespace-pre-line text-xs text-muted-foreground">{doc.from_party.address}</p> : null}
+                </div>
+                <Button type="button" size="sm" variant="outline" onClick={() => setEditingBrandDetails((value) => !value)}>
+                  {editingBrandDetails ? "Done" : "Edit"}
+                </Button>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full border" style={{ backgroundColor: doc.primary_color }} /> Primary</span>
+                <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full border" style={{ backgroundColor: doc.accent_color }} /> Accent</span>
+              </div>
             </div>
-            <Input placeholder="Website" value={doc.from_party.website ?? ""} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, website: e.target.value } })} />
+
+            {editingBrandDetails ? (
+              <div className="space-y-2">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Field label="Primary color"><Input type="color" value={doc.primary_color} onChange={(e) => setDoc({ ...doc, primary_color: e.target.value })} /></Field>
+                  <Field label="Accent color"><Input type="color" value={doc.accent_color} onChange={(e) => setDoc({ ...doc, accent_color: e.target.value })} /></Field>
+                </div>
+                <Input placeholder="Company name" value={doc.from_party.name} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, name: e.target.value } })} />
+                <Textarea placeholder="Address" value={doc.from_party.address} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, address: e.target.value } })} />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Input placeholder="Email" value={doc.from_party.email} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, email: e.target.value } })} />
+                  <Input placeholder="Phone" value={doc.from_party.phone} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, phone: e.target.value } })} />
+                </div>
+                <Input placeholder="Website" value={doc.from_party.website ?? ""} onChange={(e) => setDoc({ ...doc, from_party: { ...doc.from_party, website: e.target.value } })} />
+              </div>
+            ) : null}
           </Section>
 
           <Section title="To">
@@ -258,10 +371,12 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
               <Field label="Discount"><Input type="number" min={0} value={doc.discount} onChange={(e) => setDoc({ ...doc, discount: Number(e.target.value) })} /></Field>
             </div>
           </Section>
-
-          <Section title="Notes & terms">
+          <Section title="Notes & fixed terms">
             <Textarea placeholder="Notes" value={doc.notes} onChange={(e) => setDoc({ ...doc, notes: e.target.value })} />
-            <Textarea placeholder="Terms & conditions" value={doc.terms} onChange={(e) => setDoc({ ...doc, terms: e.target.value })} />
+            <div className="rounded-lg border border-border/70 bg-background/60 p-3 text-sm">
+              <Label className="text-xs">Terms & conditions</Label>
+              <p className="mt-1 whitespace-pre-line text-muted-foreground">{doc.terms || DEFAULT_DOC.terms}</p>
+            </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <Input placeholder="Signed by" value={doc.signature_name} onChange={(e) => setDoc({ ...doc, signature_name: e.target.value })} />
               <Input placeholder="Title" value={doc.signature_title} onChange={(e) => setDoc({ ...doc, signature_title: e.target.value })} />
@@ -295,3 +410,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+
+

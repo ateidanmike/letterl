@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LogOut, Menu } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,12 @@ const navItems = [
 function AuthLayout() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  const handleSignOut = () => {
+    setMobileNavOpen(false);
+    void signOut();
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -58,11 +64,11 @@ function AuthLayout() {
             </nav>
           </div>
 
-          <Button className="hidden md:inline-flex" variant="ghost" size="sm" onClick={signOut}>
+          <Button className="hidden md:inline-flex" variant="ghost" size="sm" onClick={handleSignOut}>
             Sign out
           </Button>
 
-          <Sheet>
+          <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open navigation menu">
                 <Menu className="h-5 w-5" />
@@ -83,13 +89,13 @@ function AuthLayout() {
               <nav className="mt-8 grid gap-2">
                 {navItems.map((item) => (
                   <SheetClose asChild key={item.to}>
-                    <NavLink to={item.to} className="w-full justify-start px-4 py-3 text-base">
+                    <NavLink to={item.to} onClick={() => setMobileNavOpen(false)} className="w-full justify-start px-4 py-3 text-base">
                       {item.label}
                     </NavLink>
                   </SheetClose>
                 ))}
               </nav>
-              <Button variant="outline" className="mt-8 w-full justify-start" onClick={signOut}>
+              <Button variant="outline" className="mt-8 w-full justify-start" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4" /> Sign out
               </Button>
             </SheetContent>
@@ -103,13 +109,14 @@ function AuthLayout() {
   );
 }
 
-function NavLink({ to, children, className = "" }: { to: string; children: React.ReactNode; className?: string }) {
+function NavLink({ to, children, className = "", onClick }: { to: string; children: React.ReactNode; className?: string; onClick?: () => void }) {
   const baseClass = `inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground ${className}`;
   const activeClass = `inline-flex items-center rounded-md bg-secondary px-3 py-2 text-sm font-medium text-foreground ${className}`;
 
   return (
-    <Link to={to} className={baseClass} activeProps={{ className: activeClass }}>
+    <Link to={to} className={baseClass} activeProps={{ className: activeClass }} onClick={onClick}>
       {children}
     </Link>
   );
 }
+
