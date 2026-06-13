@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Edit, Plus, Trash2, FileText } from "lucide-react";
+import { Copy, Edit, Pencil, Plus, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,9 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [folder, setFolder] = useState<string>("All");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
 
   const load = async () => {
     const { data, error } = await supabase
@@ -45,8 +48,37 @@ function Dashboard() {
     navigate({ to: "/editor", search: { id: data.id } });
   };
 
+  const rename = async (row: Row) => {
+    const title = window.prompt("Rename letterhead", row.title)?.trim();
+    if (!title || title === row.title) return;
+    setRenamingId(row.id);
+    const { error } = await supabase.from("letterheads").update({ title }).eq("id", row.id);
+    setRenamingId(null);
+    if (error) return toast.error(error.message);
+    setRows((current) => current.map((item) => item.id === row.id ? { ...item, title } : item));
+    toast.success("Letterhead renamed");
+  };
+
+  const duplicate = async (id: string) => {
+    setDuplicatingId(id);
+    const { data, error } = await supabase.from("letterheads").select("*").eq("id", id).single();
+    if (error || !data) {
+      setDuplicatingId(null);
+      return toast.error(error?.message ?? "Could not duplicate letterhead");
+    }
+    const { id: _id, created_at: _createdAt, updated_at: _updatedAt, ...copy } = data;
+    const { error: insertError } = await supabase.from("letterheads").insert({ ...copy, user_id: user!.id, title: `${data.title} copy` });
+    setDuplicatingId(null);
+    if (insertError) return toast.error(insertError.message);
+    toast.success("Letterhead duplicated");
+    await load();
+  };
+
   const remove = async (id: string) => {
+    if (!window.confirm("Delete this letterhead? This cannot be undone.")) return;
+    setDeletingId(id);
     const { error } = await supabase.from("letterheads").delete().eq("id", id);
+    setDeletingId(null);
     if (error) toast.error(error.message);
     else setRows((r) => r.filter((x) => x.id !== id));
   };
@@ -61,7 +93,7 @@ function Dashboard() {
           <Button onClick={create} className="flex-1 sm:flex-none"><Plus className="mr-2 h-4 w-4" /> New letterhead</Button>
         </div>
       </div>
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="sticky top-[73px] z-20 mt-4 flex flex-col gap-3 rounded-xl bg-background/85 py-2 backdrop-blur sm:static sm:flex-row sm:flex-wrap sm:items-center sm:bg-transparent sm:py-0 sm:backdrop-blur-none">
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -72,7 +104,7 @@ function Dashboard() {
           <button
             key={f}
             onClick={() => setFolder(f)}
-            className={`min-h-9 rounded-full px-3 py-1 text-xs transition ${folder === f ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
+            className={`min-h-9 flex-1 rounded-full px-3 py-1 text-xs transition sm:flex-none ${folder === f ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
           >
             {f}
           </button>

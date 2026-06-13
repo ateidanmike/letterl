@@ -40,6 +40,7 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [editingBrandDetails, setEditingBrandDetails] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
   const lastAutosavedRef = useRef("");
@@ -228,6 +229,17 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
       document.removeEventListener("visibilitychange", saveOnVisibilityChange);
     };
   }, [doc, draftKey, id, loaded]);
+
+  useEffect(() => {
+    if (autosaveStatus !== "error") return;
+    const warnOnLeave = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "Your latest changes are saved in this browser, but the online draft has not synced yet.";
+    };
+    window.addEventListener("beforeunload", warnOnLeave);
+    return () => window.removeEventListener("beforeunload", warnOnLeave);
+  }, [autosaveStatus]);
+
   const download = async () => {
     if (!previewRef.current) return;
     const saved = await save({ quiet: true });
@@ -249,7 +261,7 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
     <div className="ambient-bg min-h-screen">
       <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[minmax(320px,420px)_1fr]">
         <aside className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/documents" })}>
               <ArrowLeft className="mr-1 h-4 w-4" /> Back
             </Button>
@@ -410,6 +422,4 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
-
-
 

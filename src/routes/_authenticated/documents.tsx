@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, Edit, FilePlus2, FileText, Plus, Receipt, Trash2, FileSpreadsheet, Truck } from "lucide-react";
+import { Copy, Download, Edit, FilePlus2, FileText, Pencil, Plus, Receipt, Trash2, FileSpreadsheet, Truck } from "lucide-react";
 import { toast } from "sonner";
 import {
   DOC_TYPES,
@@ -91,6 +91,10 @@ function DocumentsPage() {
   const [filter, setFilter] = useState<DocType | "all">("all");
   const [downloadDoc, setDownloadDoc] = useState<BusinessDoc | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [receiptingId, setReceiptingId] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
@@ -159,8 +163,12 @@ function DocumentsPage() {
 
   const createReceiptFromInvoice = async (row: Row) => {
     if (!user) return;
+    setReceiptingId(row.id);
     const invoice = await fetchDocument(row.id);
-    if (!invoice) return;
+    if (!invoice) {
+      setReceiptingId(null);
+      return;
+    }
 
     const totals = calcTotals(invoice);
     const defaultAmount = totals.total.toFixed(2);
@@ -168,11 +176,12 @@ function DocumentsPage() {
       `Amount received for invoice #${invoice.doc_number}?\nInvoice total: ${formatMoney(totals.total, invoice.currency)}`,
       defaultAmount,
     );
-    if (answer === null) return;
+    if (answer === null) { setReceiptingId(null); return; }
 
     const amountPaid = Number(answer.replace(/,/g, ""));
     if (!Number.isFinite(amountPaid) || amountPaid <= 0) {
       toast.error("Enter a valid payment amount");
+      setReceiptingId(null);
       return;
     }
 
@@ -183,6 +192,7 @@ function DocumentsPage() {
       receiptNumber = await nextDocumentNumber(user.id);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not generate receipt number");
+      setReceiptingId(null);
       return;
     }
     const paymentSummary =
@@ -217,18 +227,73 @@ function DocumentsPage() {
       })
       .select("id,title,doc_number").single();
 
+    setReceiptingId(null);
     if (error) return toast.error(error.message);
     toast.success(status === "partial" ? "Partial receipt created" : "Receipt created");
     navigate({ to: "/document/$slug", params: { slug: documentSlug(data) } });
   };
+  const rename = async (row: Row) => {
+    const title = window.prompt("Rename document", row.title)?.trim();
+    if (!title || title === row.title) return;
+    setRenamingId(row.id);
+    const { error } = await supabase.from("business_documents").update({ title }).eq("id", row.id);
+    setRenamingId(null);
+    if (error) return toast.error(error.message);
+    setRows((current) => current.map((item) => item.id === row.id ? { ...item, title } : item));
+    toast.success("Document renamed");
+  };
+
+  const duplicate = async (row: Row) => {
+    if (!user) return;
+    setDuplicatingId(row.id);
+    const source = await fetchDocument(row.id);
+    if (!source) { setDuplicatingId(null); return; }
+    let docNumber = DEFAULT_DOC.doc_number;
+    try {
+      docNumber = await nextDocumentNumber(user.id);
+    } catch (error) {
+      setDuplicatingId(null);
+      return toast.error(error instanceof Error ? error.message : "Could not generate document number");
+    }
+    const { error } = await supabase.from("business_documents").insert({
+      user_id: user.id,
+      doc_type: source.doc_type,
+      title: `${source.title} copy`,
+      doc_number: docNumber,
+      template: source.template,
+      issue_date: source.issue_date,
+      due_date: source.due_date,
+      currency: source.currency,
+      from_party: source.from_party,
+      to_party: source.to_party,
+      items: source.items,
+      tax_rate: source.tax_rate,
+      discount: source.discount,
+      notes: source.notes,
+      terms: source.terms,
+      primary_color: source.primary_color,
+      accent_color: source.accent_color,
+      signature_name: source.signature_name,
+      signature_title: source.signature_title,
+      status: "draft",
+    });
+    setDuplicatingId(null);
+    if (error) return toast.error(error.message);
+    toast.success("Document duplicated");
+    await load();
+  };
 
   const remove = async (id: string) => {
+    if (!window.confirm("Delete this document? This cannot be undone.")) return;
+    setDeletingId(id);
     const { error } = await supabase.from("business_documents").delete().eq("id", id);
+    setDeletingId(null);
     if (error) toast.error(error.message);
     else setRows((r) => r.filter((x) => x.id !== id));
   };
 
   const filtered = rows.filter((r) => filter === "all" || r.doc_type === filter);
+  const createFromFilter = () => create(filter === "all" ? "invoice" : filter);
 
   return (
     <div className="ambient-bg min-h-screen">
@@ -266,7 +331,7 @@ function DocumentsPage() {
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2 pb-1">
+        <div className="sticky top-[73px] z-20 mt-6 flex flex-wrap gap-2 rounded-xl bg-background/85 py-2 backdrop-blur sm:static sm:bg-transparent sm:py-0 sm:backdrop-blur-none">
           {(["all", ...DOC_TYPES.map((t) => t.id)] as const).map((id) => (
             <button
               key={id}
@@ -282,9 +347,13 @@ function DocumentsPage() {
           <p className="mt-8 text-muted-foreground">Loading...</p>
         ) : filtered.length === 0 ? (
           <Card className="mt-6 glass border-0">
-            <CardContent className="flex flex-col items-center gap-3 px-4 py-12 text-center sm:py-16">
+            <CardContent className="flex flex-col items-center gap-3 px-4 py-10 text-center sm:py-14">
               <FileText className="h-10 w-10 text-muted-foreground" />
-              <p className="text-muted-foreground">No documents yet - pick a type above to start.</p>
+              <p className="text-muted-foreground">No documents match this view.</p>
+              <div className="grid w-full max-w-sm grid-cols-2 gap-2">
+                <Button onClick={createFromFilter}><Plus className="h-4 w-4" /> Create</Button>
+                <Button variant="outline" onClick={() => setFilter("all")} disabled={filter === "all"}>Clear</Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
@@ -308,8 +377,8 @@ function DocumentsPage() {
                     </Link>
                     <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:grid-cols-none lg:auto-cols-max lg:grid-flow-col">
                       {r.doc_type === "invoice" && (
-                        <Button variant="outline" size="sm" onClick={() => createReceiptFromInvoice(r)} className="min-w-0 justify-center px-2 text-xs sm:text-sm">
-                          <FilePlus2 className="h-4 w-4 shrink-0" /> <span>Receipt</span>
+                        <Button variant="outline" size="sm" onClick={() => createReceiptFromInvoice(r)} disabled={receiptingId === r.id} className="min-w-0 justify-center px-2 text-xs sm:text-sm">
+                          <FilePlus2 className="h-4 w-4 shrink-0" /> <span>{receiptingId === r.id ? "Creating" : "Receipt"}</span>
                         </Button>
                       )}
                       <Button asChild variant="outline" size="sm" className="min-w-0 justify-center px-2 text-xs sm:text-sm">
@@ -320,8 +389,14 @@ function DocumentsPage() {
                       <Button variant="outline" size="sm" onClick={() => downloadSaved(r)} disabled={downloadingId === r.id} className="min-w-0 justify-center px-2 text-xs sm:text-sm">
                         <Download className="h-4 w-4 shrink-0" /> <span>{downloadingId === r.id ? "PDF..." : "PDF"}</span>
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => remove(r.id)} aria-label="Delete document" className="min-w-0 justify-center px-2 text-xs sm:text-sm">
-                        <Trash2 className="h-4 w-4 shrink-0 text-destructive" /> <span>Delete</span>
+                      <Button variant="outline" size="sm" onClick={() => rename(r)} disabled={renamingId === r.id} className="min-w-0 justify-center px-2 text-xs sm:text-sm">
+                        <Pencil className="h-4 w-4 shrink-0" /> <span>{renamingId === r.id ? "Saving" : "Rename"}</span>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => duplicate(r)} disabled={duplicatingId === r.id} className="min-w-0 justify-center px-2 text-xs sm:text-sm">
+                        <Copy className="h-4 w-4 shrink-0" /> <span>{duplicatingId === r.id ? "Copying" : "Duplicate"}</span>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => remove(r.id)} disabled={deletingId === r.id} aria-label="Delete document" className="min-w-0 justify-center px-2 text-xs sm:text-sm">
+                        <Trash2 className="h-4 w-4 shrink-0 text-destructive" /> <span>{deletingId === r.id ? "Deleting" : "Delete"}</span>
                       </Button>
                     </div>
                   </CardContent>
