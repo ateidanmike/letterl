@@ -1,4 +1,13 @@
 export type DocType = "invoice" | "receipt" | "quotation" | "delivery_note";
+export type DocumentStatus = "draft" | "sent" | "paid" | "partial" | "archived";
+
+export const DOCUMENT_STATUSES: { id: DocumentStatus; name: string }[] = [
+  { id: "draft", name: "Draft" },
+  { id: "sent", name: "Sent" },
+  { id: "paid", name: "Paid" },
+  { id: "partial", name: "Partial" },
+  { id: "archived", name: "Archived" },
+];
 
 export const DOC_TYPES: { id: DocType; name: string; label: string; description: string }[] = [
   { id: "invoice", name: "Invoice", label: "INVOICE", description: "Bill clients for products or services" },
@@ -53,7 +62,7 @@ export type BusinessDoc = {
   signature_name: string;
   signature_title: string;
   signature_data?: string | null;
-  status: string;
+  status: DocumentStatus;
   logo_url?: string | null;
 };
 

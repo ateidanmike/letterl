@@ -1,20 +1,24 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Copy, Download, Edit, FilePlus2, FileText, Pencil, Plus, Receipt, Trash2, FileSpreadsheet, Truck } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Archive, Copy, Download, Edit, FilePlus2, FileText, Pencil, Plus, Receipt, Trash2, FileSpreadsheet, Truck } from "lucide-react";
 import { toast } from "sonner";
 import {
   DOC_TYPES,
+  DOCUMENT_STATUSES,
   DEFAULT_DOC,
   calcTotals,
   formatMoney,
   type BusinessDoc,
   type DocType,
+  type DocumentStatus,
   type LineItem,
+  type Party,
 } from "@/lib/documents/types";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import { documentSlug } from "@/lib/documents/slug";
@@ -25,7 +29,15 @@ export const Route = createFileRoute("/_authenticated/documents")({
   head: () => ({ meta: [{ title: "Business documents - Zuridoc" }] }),
 });
 
-type Row = { id: string; title: string; doc_type: DocType; doc_number: string; updated_at: string; status: string };
+type Row = {
+  id: string;
+  title: string;
+  doc_type: DocType;
+  doc_number: string;
+  updated_at: string;
+  status: DocumentStatus;
+  to_party: Party | null;
+};
 
 const TYPE_ICON: Record<DocType, typeof FileText> = {
   invoice: FileText,
@@ -78,6 +90,7 @@ function normalizeDocument(raw: Record<string, unknown>): BusinessDoc {
   return {
     ...DEFAULT_DOC,
     ...(raw as unknown as BusinessDoc),
+    status: ((raw.status as DocumentStatus | undefined) ?? "draft"),
     items: items.length ? items : DEFAULT_DOC.items,
     from_party: { ...DEFAULT_DOC.from_party, ...((raw.from_party as object) ?? {}) },
     to_party: { ...DEFAULT_DOC.to_party, ...((raw.to_party as object) ?? {}) },
@@ -92,23 +105,33 @@ function DocumentsPage() {
   const [filter, setFilter] = useState<DocType | "all">("all");
   const [search, setSearch] = useState("");
   const [downloadDoc, setDownloadDoc] = useState<BusinessDoc | null>(null);
+  const [exportQueue, setExportQueue] = useState<BusinessDoc[]>([]);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [receiptingId, setReceiptingId] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const previewRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
     const { data, error } = await supabase
       .from("business_documents")
-      .select("id,title,doc_type,doc_number,updated_at,status")
+      .select("id,title,doc_type,doc_number,updated_at,status,to_party")
       .order("updated_at", { ascending: false });
     if (error) toast.error(error.message);
-    else setRows((data as Row[]) ?? []);
+    else setRows(((data as Row[]) ?? []).map((row) => ({ ...row, status: row.status ?? "draft" })));
     setLoading(false);
   };
   useEffect(() => { if (user) load(); }, [user]);
+
+  useEffect(() => {
+    if (downloadDoc || exportQueue.length === 0) return;
+    const [next, ...rest] = exportQueue;
+    setExportQueue(rest);
+    setDownloadDoc(next);
+  }, [downloadDoc, exportQueue]);
 
   useEffect(() => {
     if (!downloadDoc || !previewRef.current) return;
@@ -119,6 +142,7 @@ function DocumentsPage() {
       .finally(() => {
         setDownloadDoc(null);
         setDownloadingId(null);
+        setBulkBusy(false);
       });
   }, [downloadDoc]);
 
@@ -134,12 +158,7 @@ function DocumentsPage() {
 
     const { data, error } = await supabase
       .from("business_documents")
-      .insert({
-        user_id: user!.id,
-        doc_type,
-        title: `New ${meta.name}`,
-        doc_number: docNumber,
-      })
+      .insert({ user_id: user!.id, doc_type, title: `New ${meta.name}`, doc_number: docNumber })
       .select("id,title,doc_number").single();
     if (error) return toast.error(error.message);
     navigate({ to: "/document/$slug", params: { slug: documentSlug(data) } });
@@ -152,6 +171,75 @@ function DocumentsPage() {
       return null;
     }
     return normalizeDocument(data as unknown as Record<string, unknown>);
+  };
+
+  const selectedRows = useMemo(() => rows.filter((row) => selectedIds.has(row.id)), [rows, selectedIds]);
+  const latestDraft = useMemo(() => rows.find((row) => row.status === "draft"), [rows]);
+  const filtered = useMemo(() => rows
+    .filter((r) => filter === "all" || r.doc_type === filter)
+    .filter((r) => {
+      const query = search.trim().toLowerCase();
+      if (!query) return true;
+      const typeName = DOC_TYPES.find((t) => t.id === r.doc_type)?.name ?? r.doc_type;
+      const customer = r.to_party?.name ?? "";
+      const customerEmail = r.to_party?.email ?? "";
+      return [r.title, r.doc_number, r.status, typeName, customer, customerEmail].some((value) => value.toLowerCase().includes(query));
+    }), [filter, rows, search]);
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectVisible = () => setSelectedIds(new Set(filtered.map((row) => row.id)));
+  const clearSelected = () => setSelectedIds(new Set());
+
+  const updateStatus = async (row: Row, status: DocumentStatus) => {
+    const { error } = await supabase.from("business_documents").update({ status }).eq("id", row.id);
+    if (error) return toast.error(error.message);
+    setRows((current) => current.map((item) => item.id === row.id ? { ...item, status } : item));
+    toast.success("Status updated");
+  };
+
+  const bulkUpdateStatus = async (status: DocumentStatus) => {
+    if (selectedRows.length === 0) return;
+    setBulkBusy(true);
+    const ids = selectedRows.map((row) => row.id);
+    const { error } = await supabase.from("business_documents").update({ status }).in("id", ids);
+    setBulkBusy(false);
+    if (error) return toast.error(error.message);
+    setRows((current) => current.map((row) => ids.includes(row.id) ? { ...row, status } : row));
+    clearSelected();
+    toast.success(`${ids.length} document${ids.length === 1 ? "" : "s"} updated`);
+  };
+
+  const bulkDelete = async () => {
+    if (selectedRows.length === 0) return;
+    if (!window.confirm(`Delete ${selectedRows.length} selected document${selectedRows.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    setBulkBusy(true);
+    const ids = selectedRows.map((row) => row.id);
+    const { error } = await supabase.from("business_documents").delete().in("id", ids);
+    setBulkBusy(false);
+    if (error) return toast.error(error.message);
+    setRows((current) => current.filter((row) => !ids.includes(row.id)));
+    clearSelected();
+    toast.success("Selected documents deleted");
+  };
+
+  const bulkExport = async () => {
+    if (selectedRows.length === 0) return;
+    setBulkBusy(true);
+    const docs = (await Promise.all(selectedRows.map((row) => fetchDocument(row.id)))).filter(Boolean) as BusinessDoc[];
+    if (docs.length === 0) {
+      setBulkBusy(false);
+      return;
+    }
+    toast.message(`Exporting ${docs.length} PDF${docs.length === 1 ? "" : "s"}...`);
+    setExportQueue(docs);
   };
 
   const downloadSaved = async (row: Row) => {
@@ -189,7 +277,7 @@ function DocumentsPage() {
     }
 
     const balance = Math.max(0, totals.total - amountPaid);
-    const status = balance > 0 ? "partial" : "paid";
+    const status: DocumentStatus = balance > 0 ? "partial" : "paid";
     let receiptNumber = `RCPT-${invoice.doc_number || new Date().getTime()}`;
     try {
       receiptNumber = await nextDocumentNumber(user.id);
@@ -198,12 +286,10 @@ function DocumentsPage() {
       setReceiptingId(null);
       return;
     }
-    const paymentSummary =
-      `Payment for invoice #${invoice.doc_number}. Amount received: ${formatMoney(amountPaid, invoice.currency)}.`;
-    const balanceSummary =
-      balance > 0
-        ? `Partial payment. Original invoice total: ${formatMoney(totals.total, invoice.currency)}. Balance due: ${formatMoney(balance, invoice.currency)}.`
-        : `Full payment. Original invoice total: ${formatMoney(totals.total, invoice.currency)}. Balance due: ${formatMoney(0, invoice.currency)}.`;
+    const paymentSummary = `Payment for invoice #${invoice.doc_number}. Amount received: ${formatMoney(amountPaid, invoice.currency)}.`;
+    const balanceSummary = balance > 0
+      ? `Partial payment. Original invoice total: ${formatMoney(totals.total, invoice.currency)}. Balance due: ${formatMoney(balance, invoice.currency)}.`
+      : `Full payment. Original invoice total: ${formatMoney(totals.total, invoice.currency)}. Balance due: ${formatMoney(0, invoice.currency)}.`;
 
     const { data, error } = await supabase
       .from("business_documents")
@@ -235,6 +321,7 @@ function DocumentsPage() {
     toast.success(status === "partial" ? "Partial receipt created" : "Receipt created");
     navigate({ to: "/document/$slug", params: { slug: documentSlug(data) } });
   };
+
   const rename = async (row: Row) => {
     const title = window.prompt("Rename document", row.title)?.trim();
     if (!title || title === row.title) return;
@@ -293,17 +380,14 @@ function DocumentsPage() {
     setDeletingId(null);
     if (error) return toast.error(error.message);
     setRows((current) => current.filter((item) => item.id !== row.id));
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      next.delete(row.id);
+      return next;
+    });
     toast.success("Document deleted");
   };
 
-  const filtered = rows
-    .filter((r) => filter === "all" || r.doc_type === filter)
-    .filter((r) => {
-      const query = search.trim().toLowerCase();
-      if (!query) return true;
-      const typeName = DOC_TYPES.find((t) => t.id === r.doc_type)?.name ?? r.doc_type;
-      return [r.title, r.doc_number, r.status, typeName].some((value) => value.toLowerCase().includes(query));
-    });
   const createFromFilter = () => create(filter === "all" ? "invoice" : filter);
 
   return (
@@ -315,8 +399,19 @@ function DocumentsPage() {
       )}
       <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
         <div className="rounded-2xl glass px-4 py-5 sm:px-6">
-          <h1 className="text-2xl font-bold leading-tight sm:text-3xl">Business documents</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Create stunning invoices, receipts, quotations and delivery notes in seconds.</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold leading-tight sm:text-3xl">Business documents</h1>
+              <p className="mt-1 text-sm text-muted-foreground">Create stunning invoices, receipts, quotations and delivery notes in seconds.</p>
+            </div>
+            {latestDraft ? (
+              <Button asChild variant="outline" className="w-full sm:w-auto">
+                <Link to="/document/$slug" params={{ slug: documentSlug(latestDraft) }}>
+                  Continue latest draft
+                </Link>
+              </Button>
+            ) : null}
+          </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {DOC_TYPES.map((t) => {
               const Icon = TYPE_ICON[t.id];
@@ -346,23 +441,42 @@ function DocumentsPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search title, number, status..."
+            placeholder="Search title, number, client, status..."
             className="w-full glass-subtle border-0 sm:max-w-sm"
           />
           <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
             {(["all", ...DOC_TYPES.map((t) => t.id)] as const).map((id) => (
-            <button
-              key={id}
-              onClick={() => setFilter(id as DocType | "all")}
-              className={`min-h-9 shrink-0 rounded-full px-4 py-1 text-xs transition ${filter === id ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
-            >
-              {id === "all" ? "All" : DOC_TYPES.find((t) => t.id === id)?.name}
-            </button>
-          ))}
+              <button
+                key={id}
+                onClick={() => setFilter(id as DocType | "all")}
+                className={`min-h-9 shrink-0 rounded-full px-4 py-1 text-xs transition ${filter === id ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
+              >
+                {id === "all" ? "All" : DOC_TYPES.find((t) => t.id === id)?.name}
+              </button>
+            ))}
+          </div>
         </div>
 
-        
-        </div>
+        {!loading && filtered.length > 0 ? (
+          <div className="mt-4 flex flex-col gap-2 rounded-xl glass-subtle p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <Button variant="outline" size="sm" onClick={selectVisible}>Select visible</Button>
+              <Button variant="ghost" size="sm" onClick={clearSelected} disabled={selectedIds.size === 0}>Clear</Button>
+              <span>{selectedIds.size} selected</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:flex">
+              <Button variant="outline" size="sm" onClick={bulkExport} disabled={selectedIds.size === 0 || bulkBusy}><Download className="h-4 w-4" /> Export</Button>
+              <Button variant="outline" size="sm" onClick={() => bulkUpdateStatus("archived")} disabled={selectedIds.size === 0 || bulkBusy}><Archive className="h-4 w-4" /> Archive</Button>
+              <Select onValueChange={(value) => bulkUpdateStatus(value as DocumentStatus)} disabled={selectedIds.size === 0 || bulkBusy}>
+                <SelectTrigger className="h-9 min-w-32"><SelectValue placeholder="Set status" /></SelectTrigger>
+                <SelectContent>
+                  {DOCUMENT_STATUSES.map((status) => <SelectItem key={status.id} value={status.id}>{status.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={bulkDelete} disabled={selectedIds.size === 0 || bulkBusy}><Trash2 className="h-4 w-4 text-destructive" /> Delete</Button>
+            </div>
+          </div>
+        ) : null}
 
         {loading ? (
           <p className="mt-8 text-muted-foreground">Loading...</p>
@@ -381,31 +495,43 @@ function DocumentsPage() {
           <div className="mt-4 grid gap-3">
             {filtered.map((r) => {
               const Icon = TYPE_ICON[r.doc_type];
+              const customer = r.to_party?.name || "No client yet";
               return (
                 <Card key={r.id} className="glass border-0 transition hover:-translate-y-0.5">
                   <CardContent className="grid min-w-0 gap-3 px-3 py-4 sm:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-                    <Link to="/document/$slug" params={{ slug: documentSlug(r) }} className="grid min-w-0 grid-cols-[36px_minmax(0,1fr)] items-start gap-3 text-left">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div className="grid min-w-0 grid-cols-[24px_36px_minmax(0,1fr)] items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(r.id)}
+                        onChange={() => toggleSelected(r.id)}
+                        className="mt-2 h-4 w-4 rounded border-border accent-primary"
+                        aria-label={`Select ${r.title}`}
+                      />
+                      <Link to="/document/$slug" params={{ slug: documentSlug(r) }} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Icon className="h-4 w-4" />
-                      </div>
-                      <div className="min-w-0 space-y-0.5">
+                      </Link>
+                      <Link to="/document/$slug" params={{ slug: documentSlug(r) }} className="min-w-0 space-y-0.5 text-left">
                         <div className="break-words font-medium leading-snug text-foreground">{r.title}</div>
                         <div className="break-all text-[11px] font-medium text-muted-foreground sm:text-xs">#{r.doc_number}</div>
                         <div className="text-xs leading-relaxed text-muted-foreground">
-                          {DOC_TYPES.find((t) => t.id === r.doc_type)?.name} · {r.status} · updated {new Date(r.updated_at).toLocaleString()}
+                          {DOC_TYPES.find((t) => t.id === r.doc_type)?.name} · {customer} · updated {new Date(r.updated_at).toLocaleString()}
                         </div>
-                      </div>
-                    </Link>
+                      </Link>
+                    </div>
                     <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:grid-cols-none lg:auto-cols-max lg:grid-flow-col">
+                      <Select value={r.status} onValueChange={(value) => updateStatus(r, value as DocumentStatus)}>
+                        <SelectTrigger className="h-9 min-w-28 text-xs sm:text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {DOCUMENT_STATUSES.map((status) => <SelectItem key={status.id} value={status.id}>{status.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                       {r.doc_type === "invoice" && (
                         <Button variant="outline" size="sm" onClick={() => createReceiptFromInvoice(r)} disabled={receiptingId === r.id} className="min-w-0 justify-center px-2 text-xs sm:text-sm">
                           <FilePlus2 className="h-4 w-4 shrink-0" /> <span>{receiptingId === r.id ? "Creating" : "Receipt"}</span>
                         </Button>
                       )}
                       <Button asChild variant="outline" size="sm" className="min-w-0 justify-center px-2 text-xs sm:text-sm">
-                        <Link to="/document/$slug" params={{ slug: documentSlug(r) }}>
-                          <Edit className="h-4 w-4 shrink-0" /> <span>Edit</span>
-                        </Link>
+                        <Link to="/document/$slug" params={{ slug: documentSlug(r) }}><Edit className="h-4 w-4 shrink-0" /> <span>Edit</span></Link>
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => downloadSaved(r)} disabled={downloadingId === r.id} className="min-w-0 justify-center px-2 text-xs sm:text-sm">
                         <Download className="h-4 w-4 shrink-0" /> <span>{downloadingId === r.id ? "PDF..." : "PDF"}</span>
@@ -430,8 +556,3 @@ function DocumentsPage() {
     </div>
   );
 }
-
-
-
-
-

@@ -14,8 +14,8 @@ import { toast } from "sonner";
 import { ArrowLeft, Save, Download, Plus, Trash2, Copy } from "lucide-react";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import {
-  DOC_TYPES, DOC_TEMPLATES, DEFAULT_DOC, CURRENCIES,
-  type BusinessDoc, type DocType, type DocTemplateId, type LineItem,
+  DOC_TYPES, DOC_TEMPLATES, DOCUMENT_STATUSES, DEFAULT_DOC, CURRENCIES,
+  type BusinessDoc, type DocType, type DocumentStatus, type DocTemplateId, type LineItem,
 } from "@/lib/documents/types";
 import { exportPdf } from "@/lib/letterhead/pdf-export";
 import { documentSlug } from "@/lib/documents/slug";
@@ -73,7 +73,7 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
     accent_color: currentDoc.accent_color,
     signature_name: currentDoc.signature_name,
     signature_title: currentDoc.signature_title,
-    status: "draft",
+    status: currentDoc.status,
   });
 
   const mergeStoredDraft = (serverDoc: BusinessDoc, serverUpdatedAt?: unknown) => {
@@ -316,6 +316,11 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
             <p className="mt-2 px-1 text-center text-[11px] text-muted-foreground sm:text-left">
               {autosaveStatus === "saving" ? "Saving..." : autosaveStatus === "error" ? "Offline draft saved" : lastSavedAt ? `Draft saved at ${lastSavedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : "Draft saved locally"}
             </p>
+            {autosaveStatus === "error" ? (
+              <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                Your latest changes are saved in this browser, but the online copy has not synced yet. Keep this tab open when possible and try Save again.
+              </div>
+            ) : null}
           </div>
 
           <Section title="Document">
@@ -349,6 +354,14 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Number"><Input value={doc.doc_number} onChange={(e) => setDoc({ ...doc, doc_number: e.target.value })} /></Field>
+              <Field label="Status">
+                <Select value={doc.status} onValueChange={(v) => setDoc({ ...doc, status: v as DocumentStatus })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {DOCUMENT_STATUSES.map((status) => <SelectItem key={status.id} value={status.id}>{status.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
               <Field label="Currency">
                 <Select value={doc.currency} onValueChange={(v) => setDoc({ ...doc, currency: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -400,12 +413,12 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
             ) : null}
           </Section>
 
-          <Section title="To">
-            <Input placeholder="Recipient name" value={doc.to_party.name} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, name: e.target.value } })} />
-            <Textarea placeholder="Address" value={doc.to_party.address} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, address: e.target.value } })} />
+          <Section title="Client / customer">
+            <Field label="Client name"><Input placeholder="Client or customer name" value={doc.to_party.name} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, name: e.target.value } })} /></Field>
+            <Field label="Client address"><Textarea placeholder="Address" value={doc.to_party.address} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, address: e.target.value } })} /></Field>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Input placeholder="Email" value={doc.to_party.email} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, email: e.target.value } })} />
-              <Input placeholder="Phone" value={doc.to_party.phone} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, phone: e.target.value } })} />
+              <Field label="Email"><Input placeholder="Email" value={doc.to_party.email} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, email: e.target.value } })} /></Field>
+              <Field label="Phone"><Input placeholder="Phone" value={doc.to_party.phone} onChange={(e) => setDoc({ ...doc, to_party: { ...doc.to_party, phone: e.target.value } })} /></Field>
             </div>
           </Section>
 
@@ -439,8 +452,8 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
           </Section>
         </aside>
 
-        <main className="overflow-auto rounded-2xl glass p-6">
-          <div className="mx-auto" style={{ width: 794 }}>
+        <main className="overflow-hidden rounded-2xl glass p-2 sm:overflow-auto sm:p-6">
+          <div className="mx-auto origin-top scale-[0.42] min-[430px]:scale-50 min-[520px]:scale-[0.62] sm:scale-75 lg:scale-100" style={{ width: 794 }}>
             <DocumentPreview ref={previewRef} doc={doc} />
           </div>
         </main>
@@ -465,6 +478,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+
 
 
 
