@@ -11,13 +11,14 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Download, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, Download, Plus, Trash2, Copy } from "lucide-react";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import {
   DOC_TYPES, DOC_TEMPLATES, DEFAULT_DOC, CURRENCIES,
   type BusinessDoc, type DocType, type DocTemplateId, type LineItem,
 } from "@/lib/documents/types";
 import { exportPdf } from "@/lib/letterhead/pdf-export";
+import { documentSlug } from "@/lib/documents/slug";
 
 const searchSchema = z.object({ id: z.string().optional() });
 
@@ -39,6 +40,8 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
   const [doc, setDoc] = useState<BusinessDoc>(DEFAULT_DOC);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [editingBrandDetails, setEditingBrandDetails] = useState(false);
@@ -83,6 +86,7 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
       const localTime = new Date(parsed.updatedAt).getTime();
       const serverTime = typeof serverUpdatedAt === "string" ? new Date(serverUpdatedAt).getTime() : 0;
       if (!Number.isFinite(localTime) || localTime <= serverTime) return serverDoc;
+      toast.success("Restored your latest draft.");
       return {
         ...serverDoc,
         ...parsed.doc,
@@ -168,6 +172,10 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
       toast.error(error.message);
       return false;
     }
+    const savedAt = new Date();
+    setLastSavedAt(savedAt);
+    setAutosaveStatus("saved");
+    lastAutosavedRef.current = JSON.stringify(doc);
     if (!quiet) toast.success("Saved");
     return true;
   };
@@ -197,6 +205,8 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
       }
       lastAutosavedRef.current = snapshotJson;
       setAutosaveStatus("saved");
+      setLastSavedAt(new Date());
+      setLastSavedAt(new Date());
       window.localStorage.setItem(draftKey, JSON.stringify({ updatedAt: new Date().toISOString(), doc: snapshot }));
     }, 900);
 
@@ -242,9 +252,36 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
 
   const download = async () => {
     if (!previewRef.current) return;
+    setDownloading(true);
     const saved = await save({ quiet: true });
-    if (!saved) return;
-    await exportPdf(previewRef.current, `${doc.title || "document"}.pdf`);
+    if (!saved) {
+      setDownloading(false);
+      return;
+    }
+    try {
+      await exportPdf(previewRef.current, `${doc.title || "document"}.pdf`);
+      toast.success("PDF downloaded");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "PDF export failed");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const duplicateCurrent = async () => {
+    if (!user) return;
+    setDuplicating(true);
+    const copyTitle = `${doc.title || "Document"} copy`;
+    const copyNumber = `${doc.doc_number || "DOC"}-COPY-${Date.now().toString().slice(-4)}`;
+    const { data, error } = await supabase
+      .from("business_documents")
+      .insert({ ...documentPayload({ ...doc, title: copyTitle, doc_number: copyNumber }), user_id: user.id })
+      .select("id,title,doc_number")
+      .single();
+    setDuplicating(false);
+    if (error) return toast.error(error.message);
+    toast.success("Document duplicated");
+    navigate({ to: "/document/$slug", params: { slug: documentSlug(data) } });
   };
   const updateItem = (idx: number, patch: Partial<LineItem>) => {
     setDoc((d) => ({ ...d, items: d.items.map((it, i) => (i === idx ? { ...it, ...patch } : it)) }));
@@ -261,18 +298,24 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
     <div className="ambient-bg min-h-screen">
       <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[minmax(320px,420px)_1fr]">
         <aside className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/documents" })}>
-              <ArrowLeft className="mr-1 h-4 w-4" /> Back
-            </Button>
-            <div className="grid grid-cols-2 gap-2 sm:flex">
-              <Button size="sm" variant="outline" onClick={() => void save()} disabled={saving}>
-                <Save className="mr-1 h-4 w-4" /> {saving ? "Saving…" : "Save"}
+          <div className="sticky top-[73px] z-20 -mx-1 rounded-xl bg-background/90 p-1 backdrop-blur sm:static sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-between">
+              <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/documents" })} className="justify-center sm:justify-start">
+                <ArrowLeft className="mr-1 h-4 w-4" /> Back
               </Button>
-              <Button size="sm" onClick={download} disabled={saving}>
-                <Download className="mr-1 h-4 w-4" /> PDF
+              <Button size="sm" variant="outline" onClick={() => void save()} disabled={saving} className="justify-center">
+                <Save className="mr-1 h-4 w-4" /> {saving ? "Saving" : "Save"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={duplicateCurrent} disabled={duplicating || saving} className="justify-center">
+                <Copy className="mr-1 h-4 w-4" /> {duplicating ? "Copying" : "Duplicate"}
+              </Button>
+              <Button size="sm" onClick={download} disabled={saving || downloading} className="justify-center">
+                <Download className="mr-1 h-4 w-4" /> {downloading ? "PDF..." : "PDF"}
               </Button>
             </div>
+            <p className="mt-2 px-1 text-center text-[11px] text-muted-foreground sm:text-left">
+              {autosaveStatus === "saving" ? "Saving..." : autosaveStatus === "error" ? "Offline draft saved" : lastSavedAt ? `Draft saved at ${lastSavedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : "Draft saved locally"}
+            </p>
           </div>
 
           <Section title="Document">
@@ -422,4 +465,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+
+
 

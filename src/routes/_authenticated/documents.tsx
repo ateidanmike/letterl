@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Copy, Download, Edit, FilePlus2, FileText, Pencil, Plus, Receipt, Trash2, FileSpreadsheet, Truck } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -89,6 +90,7 @@ function DocumentsPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<DocType | "all">("all");
+  const [search, setSearch] = useState("");
   const [downloadDoc, setDownloadDoc] = useState<BusinessDoc | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -112,6 +114,7 @@ function DocumentsPage() {
     if (!downloadDoc || !previewRef.current) return;
     const filename = `${downloadDoc.title || "document"}.pdf`;
     exportPdf(previewRef.current, filename)
+      .then(() => toast.success("PDF downloaded"))
       .catch((error) => toast.error(error instanceof Error ? error.message : "PDF export failed"))
       .finally(() => {
         setDownloadDoc(null);
@@ -283,16 +286,24 @@ function DocumentsPage() {
     await load();
   };
 
-  const remove = async (id: string) => {
-    if (!window.confirm("Delete this document? This cannot be undone.")) return;
-    setDeletingId(id);
-    const { error } = await supabase.from("business_documents").delete().eq("id", id);
+  const remove = async (row: Row) => {
+    if (!window.confirm(`Delete "${row.title || row.doc_number}"? This cannot be undone.`)) return;
+    setDeletingId(row.id);
+    const { error } = await supabase.from("business_documents").delete().eq("id", row.id);
     setDeletingId(null);
-    if (error) toast.error(error.message);
-    else setRows((r) => r.filter((x) => x.id !== id));
+    if (error) return toast.error(error.message);
+    setRows((current) => current.filter((item) => item.id !== row.id));
+    toast.success("Document deleted");
   };
 
-  const filtered = rows.filter((r) => filter === "all" || r.doc_type === filter);
+  const filtered = rows
+    .filter((r) => filter === "all" || r.doc_type === filter)
+    .filter((r) => {
+      const query = search.trim().toLowerCase();
+      if (!query) return true;
+      const typeName = DOC_TYPES.find((t) => t.id === r.doc_type)?.name ?? r.doc_type;
+      return [r.title, r.doc_number, r.status, typeName].some((value) => value.toLowerCase().includes(query));
+    });
   const createFromFilter = () => create(filter === "all" ? "invoice" : filter);
 
   return (
@@ -331,16 +342,26 @@ function DocumentsPage() {
           </div>
         </div>
 
-        <div className="sticky top-[73px] z-20 mt-6 flex flex-wrap gap-2 rounded-xl bg-background/85 py-2 backdrop-blur sm:static sm:bg-transparent sm:py-0 sm:backdrop-blur-none">
-          {(["all", ...DOC_TYPES.map((t) => t.id)] as const).map((id) => (
+        <div className="sticky top-[73px] z-20 mt-6 flex flex-col gap-3 rounded-xl bg-background/90 py-2 backdrop-blur sm:static sm:bg-transparent sm:py-0 sm:backdrop-blur-none">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search title, number, status..."
+            className="w-full glass-subtle border-0 sm:max-w-sm"
+          />
+          <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
+            {(["all", ...DOC_TYPES.map((t) => t.id)] as const).map((id) => (
             <button
               key={id}
               onClick={() => setFilter(id as DocType | "all")}
-              className={`min-h-9 flex-1 rounded-full px-3 py-1 text-xs transition sm:flex-none ${filter === id ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
+              className={`min-h-9 shrink-0 rounded-full px-4 py-1 text-xs transition ${filter === id ? "bg-primary text-primary-foreground" : "glass-subtle hover:glass"}`}
             >
               {id === "all" ? "All" : DOC_TYPES.find((t) => t.id === id)?.name}
             </button>
           ))}
+        </div>
+
+        
         </div>
 
         {loading ? (
@@ -352,7 +373,7 @@ function DocumentsPage() {
               <p className="text-muted-foreground">No documents match this view.</p>
               <div className="grid w-full max-w-sm grid-cols-2 gap-2">
                 <Button onClick={createFromFilter}><Plus className="h-4 w-4" /> Create</Button>
-                <Button variant="outline" onClick={() => setFilter("all")} disabled={filter === "all"}>Clear</Button>
+                <Button variant="outline" onClick={() => { setFilter("all"); setSearch(""); }} disabled={filter === "all" && !search}>Clear</Button>
               </div>
             </CardContent>
           </Card>
@@ -395,7 +416,7 @@ function DocumentsPage() {
                       <Button variant="outline" size="sm" onClick={() => duplicate(r)} disabled={duplicatingId === r.id} className="min-w-0 justify-center px-2 text-xs sm:text-sm">
                         <Copy className="h-4 w-4 shrink-0" /> <span>{duplicatingId === r.id ? "Copying" : "Duplicate"}</span>
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => remove(r.id)} disabled={deletingId === r.id} aria-label="Delete document" className="min-w-0 justify-center px-2 text-xs sm:text-sm">
+                      <Button variant="outline" size="sm" onClick={() => remove(r)} disabled={deletingId === r.id} aria-label="Delete document" className="min-w-0 justify-center px-2 text-xs sm:text-sm">
                         <Trash2 className="h-4 w-4 shrink-0 text-destructive" /> <span>{deletingId === r.id ? "Deleting" : "Delete"}</span>
                       </Button>
                     </div>
@@ -409,4 +430,8 @@ function DocumentsPage() {
     </div>
   );
 }
+
+
+
+
 
