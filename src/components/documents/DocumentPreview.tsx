@@ -1,5 +1,6 @@
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import { DOC_TYPES, calcTotals, formatMoney, type BusinessDoc } from "@/lib/documents/types";
+import { makeQrDataUrl } from "@/lib/letterhead/qr";
 
 const A4_W = 794;
 const A4_H = 1123;
@@ -15,13 +16,14 @@ export const DocumentPreview = forwardRef<HTMLDivElement, Props>(function Docume
   const fmt = (n: number) => formatMoney(n, doc.currency);
 
   return (
-    <div style={{ width: A4_W * scale, minHeight: A4_H * scale }}>
+    <div style={{ width: A4_W * scale, minHeight: A4_H * scale, display: "inline-block", maxWidth: "100%" }}>
       <div
         ref={ref}
         id="letterhead-page"
         style={{
           width: A4_W,
           minHeight: A4_H,
+          boxSizing: "border-box",
           transform: `scale(${scale})`,
           transformOrigin: "top left",
           background: "#ffffff",
@@ -149,16 +151,56 @@ function BillTo({ doc }: { doc: BusinessDoc }) {
 }
 
 function Footer({ doc }: { doc: BusinessDoc }) {
+  const [qrData, setQrData] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const text = doc.qr_text?.trim();
+    if (doc.show_qr && text) {
+      makeQrDataUrl(text, 112).then((dataUrl) => {
+        if (!cancelled) setQrData(dataUrl);
+      });
+    } else {
+      setQrData(null);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [doc.show_qr, doc.qr_text]);
+
+  const showStamp = doc.show_company_stamp && doc.company_stamp_data;
+  const showSignature = doc.signature_name || doc.signature_data || showStamp;
+  const showAssets = showSignature || qrData;
+
   return (
     <div style={{ marginTop: 28, fontSize: 10.5, color: "#475569" }}>
       {doc.notes && (<div><b>Notes:</b> {doc.notes}</div>)}
       {doc.terms && (<div style={{ marginTop: 4 }}><b>Terms:</b> {doc.terms}</div>)}
-      {(doc.signature_name || doc.signature_data) && (
-        <div style={{ marginTop: 30, textAlign: "right" }}>
-          {doc.signature_data && <img src={doc.signature_data} alt="signature" style={{ height: 40, display: "inline-block" }} />}
-          <div style={{ borderTop: "1px solid #94a3b8", display: "inline-block", paddingTop: 4, marginTop: 4, minWidth: 180 }}>
-            <div style={{ fontWeight: 700 }}>{doc.signature_name}</div>
-            <div style={{ color: "#64748b" }}>{doc.signature_title}</div>
+      {showAssets && (
+        <div style={{ marginTop: 30, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
+          <div>
+            {qrData && (
+              <div style={{ textAlign: "center", color: "#64748b", fontSize: 9 }}>
+                <img src={qrData} alt="QR code" style={{ width: 76, height: 76, display: "block" }} />
+                <div style={{ marginTop: 2 }}>Scan to verify</div>
+              </div>
+            )}
+          </div>
+          <div style={{ textAlign: "right", minWidth: 220 }}>
+            {showStamp && (
+              <img
+                src={doc.company_stamp_data ?? ""}
+                alt="company stamp"
+                style={{ maxHeight: 72, maxWidth: 150, objectFit: "contain", display: "inline-block", marginRight: 8 }}
+              />
+            )}
+            {doc.signature_data && <img src={doc.signature_data} alt="signature" style={{ height: 40, display: "inline-block" }} />}
+            {(doc.signature_name || doc.signature_title || doc.signature_data) && (
+              <div style={{ borderTop: "1px solid #94a3b8", display: "inline-block", paddingTop: 4, marginTop: 4, minWidth: 180 }}>
+                <div style={{ fontWeight: 700 }}>{doc.signature_name}</div>
+                <div style={{ color: "#64748b" }}>{doc.signature_title}</div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -319,6 +361,8 @@ function DeliverySimpleTemplate({ doc, label }: TplProps) {
         <SignatureLine label="Print" />
         <SignatureLine label="Date" />
       </div>
+
+      <Footer doc={doc} />
 
       <div style={{ marginTop: 42, textAlign: "center", fontSize: 9, lineHeight: 1.15, fontWeight: 700 }}>
         <div>{doc.from_party.name || "COMPANY NAME"}</div>

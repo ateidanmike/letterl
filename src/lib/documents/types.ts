@@ -59,6 +59,10 @@ export type BusinessDoc = {
   terms: string;
   primary_color: string;
   accent_color: string;
+  show_qr: boolean;
+  qr_text: string;
+  show_company_stamp: boolean;
+  company_stamp_data?: string | null;
   signature_name: string;
   signature_title: string;
   signature_data?: string | null;
@@ -83,6 +87,10 @@ export const DEFAULT_DOC: BusinessDoc = {
   terms: "Payment due within 30 days.",
   primary_color: "#0067ec",
   accent_color: "#011b43",
+  show_qr: false,
+  qr_text: "",
+  show_company_stamp: false,
+  company_stamp_data: null,
   signature_name: "",
   signature_title: "",
   status: "draft",

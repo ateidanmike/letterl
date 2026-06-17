@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Download, Plus, Trash2, Copy } from "lucide-react";
+import { ArrowLeft, Save, Download, Plus, Trash2, Copy, Eraser, Upload } from "lucide-react";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import {
   DOC_TYPES, DOC_TEMPLATES, DOCUMENT_STATUSES, DEFAULT_DOC, CURRENCIES,
@@ -21,6 +21,7 @@ import { exportPdf } from "@/lib/letterhead/pdf-export";
 import { documentSlug } from "@/lib/documents/slug";
 
 const searchSchema = z.object({ id: z.string().optional() });
+const DOCUMENT_ASSETS_KEY = "__document_assets";
 
 export const Route = createFileRoute("/_authenticated/document-editor")({
   validateSearch: searchSchema,
@@ -45,7 +46,9 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [editingBrandDetails, setEditingBrandDetails] = useState(false);
+  const [previewScale, setPreviewScale] = useState(1);
   const previewRef = useRef<HTMLDivElement>(null);
+  const previewShellRef = useRef<HTMLDivElement>(null);
   const lastAutosavedRef = useRef("");
   const autosaveTimerRef = useRef<number | null>(null);
   const draftKey = id ? `zuridoc:business-document-draft:${id}` : null;
@@ -53,6 +56,25 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
     doc.doc_type === "delivery_note" ? true : template.id !== "delivery_simple",
   );
 
+  const fromPartyWithDocumentAssets = (currentDoc: BusinessDoc) => ({
+    ...currentDoc.from_party,
+    [DOCUMENT_ASSETS_KEY]: {
+      show_qr: currentDoc.show_qr,
+      qr_text: currentDoc.qr_text,
+      show_company_stamp: currentDoc.show_company_stamp,
+      company_stamp_data: currentDoc.company_stamp_data ?? null,
+    },
+  });
+
+  const documentAssetsFromParty = (fromParty: Record<string, unknown>) => {
+    const assets = fromParty[DOCUMENT_ASSETS_KEY] as Partial<BusinessDoc> | undefined;
+    return {
+      show_qr: Boolean(assets?.show_qr),
+      qr_text: typeof assets?.qr_text === "string" ? assets.qr_text : "",
+      show_company_stamp: Boolean(assets?.show_company_stamp),
+      company_stamp_data: typeof assets?.company_stamp_data === "string" ? assets.company_stamp_data : null,
+    };
+  };
 
   const documentPayload = (currentDoc: BusinessDoc) => ({
     doc_type: currentDoc.doc_type,
@@ -62,7 +84,7 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
     issue_date: currentDoc.issue_date,
     due_date: currentDoc.due_date,
     currency: currentDoc.currency,
-    from_party: currentDoc.from_party,
+    from_party: fromPartyWithDocumentAssets(currentDoc),
     to_party: currentDoc.to_party,
     items: currentDoc.items,
     tax_rate: currentDoc.tax_rate,
@@ -124,11 +146,13 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
 
       if (raw) {
         const items = Array.isArray(raw.items) ? (raw.items as LineItem[]) : [];
+        const fromParty = { ...DEFAULT_DOC.from_party, ...((raw.from_party as object) ?? {}) } as Record<string, unknown>;
         const rawDoc = {
           ...DEFAULT_DOC,
           ...(raw as unknown as BusinessDoc),
           items: items.length ? items : DEFAULT_DOC.items,
-          from_party: { ...DEFAULT_DOC.from_party, ...((raw.from_party as object) ?? {}) },
+          ...documentAssetsFromParty(fromParty),
+          from_party: fromParty as BusinessDoc["from_party"],
           to_party: { ...DEFAULT_DOC.to_party, ...((raw.to_party as object) ?? {}) },
         };
         const shouldUseBrandPrimary = !rawDoc.primary_color || rawDoc.primary_color === DEFAULT_DOC.primary_color || rawDoc.primary_color.toLowerCase() === "#2563eb";
@@ -139,6 +163,7 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
           primary_color: shouldUseBrandPrimary ? brand?.primary_color ?? rawDoc.primary_color : rawDoc.primary_color,
           accent_color: shouldUseBrandAccent ? brand?.accent_color ?? rawDoc.accent_color : rawDoc.accent_color,
           terms: rawDoc.terms || DEFAULT_DOC.terms,
+          qr_text: rawDoc.qr_text || (id ? `${window.location.origin}/document/${documentSlug(rawDoc)}` : ""),
           from_party: {
             ...rawDoc.from_party,
             name: rawDoc.from_party.name || brandFromParty.name,
@@ -292,6 +317,27 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
   const removeItem = (idx: number) =>
     setDoc((d) => ({ ...d, items: d.items.filter((_, i) => i !== idx) }));
 
+  useEffect(() => {
+    const shell = previewShellRef.current;
+    if (!shell) return;
+
+    const updateScale = () => {
+      const width = shell.clientWidth;
+      if (!width) return;
+      const padding = width < 640 ? 8 : 0;
+      setPreviewScale(Math.min(1, Math.max(0.36, (width - padding) / 794)));
+    };
+
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(shell);
+    window.addEventListener("orientationchange", updateScale);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("orientationchange", updateScale);
+    };
+  }, []);
+
   if (!loaded) return <div className="p-10 text-muted-foreground">Loading…</div>;
 
   return (
@@ -441,9 +487,57 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
           </Section>
           <Section title="Notes & fixed terms">
             <Textarea placeholder="Notes" value={doc.notes} onChange={(e) => setDoc({ ...doc, notes: e.target.value })} />
-            <div className="rounded-lg border border-border/70 bg-background/60 p-3 text-sm">
-              <Label className="text-xs">Terms & conditions</Label>
-              <p className="mt-1 whitespace-pre-line text-muted-foreground">{doc.terms || DEFAULT_DOC.terms}</p>
+            <Field label="Terms & conditions">
+              <Textarea
+                placeholder="Terms & conditions"
+                value={doc.terms}
+                onChange={(e) => setDoc({ ...doc, terms: e.target.value })}
+              />
+            </Field>
+            <div className="rounded-lg border border-border/70 bg-background/60 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Label className="text-xs">Company stamp</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">Optional image shown near the signature.</p>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={doc.show_company_stamp}
+                    onChange={(e) => setDoc({ ...doc, show_company_stamp: e.target.checked })}
+                    className="h-4 w-4 rounded border-border accent-primary"
+                  />
+                  Use
+                </label>
+              </div>
+              <DocumentImageUpload
+                value={doc.company_stamp_data}
+                onChange={(value) => setDoc({ ...doc, company_stamp_data: value, show_company_stamp: !!value || doc.show_company_stamp })}
+                label="company stamp"
+              />
+            </div>
+            <div className="rounded-lg border border-border/70 bg-background/60 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Label className="text-xs">QR code</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">Optional QR shown on the document.</p>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={doc.show_qr}
+                    onChange={(e) => setDoc({ ...doc, show_qr: e.target.checked })}
+                    className="h-4 w-4 rounded border-border accent-primary"
+                  />
+                  Use
+                </label>
+              </div>
+              <Input
+                className="mt-2"
+                placeholder="QR link or text"
+                value={doc.qr_text}
+                onChange={(e) => setDoc({ ...doc, qr_text: e.target.value })}
+              />
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <Input placeholder="Signed by" value={doc.signature_name} onChange={(e) => setDoc({ ...doc, signature_name: e.target.value })} />
@@ -452,9 +546,11 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
           </Section>
         </aside>
 
-        <main className="overflow-hidden rounded-2xl glass p-2 sm:overflow-auto sm:p-6">
-          <div className="mx-auto origin-top scale-[0.42] min-[430px]:scale-50 min-[520px]:scale-[0.62] sm:scale-75 lg:scale-100" style={{ width: 794 }}>
-            <DocumentPreview ref={previewRef} doc={doc} />
+        <main className="rounded-2xl glass p-2 sm:p-6">
+          <div ref={previewShellRef} className="w-full overflow-x-auto overflow-y-hidden">
+            <div className="mx-auto" style={{ width: 794 * previewScale }}>
+              <DocumentPreview ref={previewRef} doc={doc} scale={previewScale} />
+            </div>
           </div>
         </main>
       </div>
@@ -475,6 +571,47 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function DocumentImageUpload({
+  value,
+  onChange,
+  label,
+}: {
+  value: string | null | undefined;
+  onChange: (dataUrl: string | null) => void;
+  label: string;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const onUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => onChange(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="mt-3 space-y-2">
+      {value ? (
+        <div className="flex items-center gap-3 rounded-md border bg-white p-2">
+          <img src={value} alt={label} className="h-16 max-w-32 object-contain" />
+          <Button type="button" size="sm" variant="ghost" onClick={() => onChange(null)}>
+            <Eraser className="mr-1 h-3 w-3" /> Clear
+          </Button>
+        </div>
+      ) : null}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+      />
+      <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
+        <Upload className="mr-1 h-3 w-3" /> Upload {label}
+      </Button>
     </div>
   );
 }

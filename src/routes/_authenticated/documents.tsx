@@ -39,6 +39,8 @@ type Row = {
   to_party: Party | null;
 };
 
+const DOCUMENT_ASSETS_KEY = "__document_assets";
+
 const TYPE_ICON: Record<DocType, typeof FileText> = {
   invoice: FileText,
   receipt: Receipt,
@@ -87,13 +89,31 @@ async function nextDocumentNumber(userId: string) {
 
 function normalizeDocument(raw: Record<string, unknown>): BusinessDoc {
   const items = Array.isArray(raw.items) ? (raw.items as LineItem[]) : [];
+  const fromParty = { ...DEFAULT_DOC.from_party, ...((raw.from_party as object) ?? {}) } as Record<string, unknown>;
+  const assets = fromParty[DOCUMENT_ASSETS_KEY] as Partial<BusinessDoc> | undefined;
   return {
     ...DEFAULT_DOC,
     ...(raw as unknown as BusinessDoc),
     status: ((raw.status as DocumentStatus | undefined) ?? "draft"),
     items: items.length ? items : DEFAULT_DOC.items,
-    from_party: { ...DEFAULT_DOC.from_party, ...((raw.from_party as object) ?? {}) },
+    show_qr: Boolean(assets?.show_qr),
+    qr_text: typeof assets?.qr_text === "string" ? assets.qr_text : "",
+    show_company_stamp: Boolean(assets?.show_company_stamp),
+    company_stamp_data: typeof assets?.company_stamp_data === "string" ? assets.company_stamp_data : null,
+    from_party: fromParty as BusinessDoc["from_party"],
     to_party: { ...DEFAULT_DOC.to_party, ...((raw.to_party as object) ?? {}) },
+  };
+}
+
+function fromPartyWithDocumentAssets(doc: BusinessDoc) {
+  return {
+    ...doc.from_party,
+    [DOCUMENT_ASSETS_KEY]: {
+      show_qr: doc.show_qr,
+      qr_text: doc.qr_text,
+      show_company_stamp: doc.show_company_stamp,
+      company_stamp_data: doc.company_stamp_data ?? null,
+    },
   };
 }
 
@@ -301,7 +321,7 @@ function DocumentsPage() {
         template: invoice.template === "delivery_simple" ? "modern" : invoice.template,
         issue_date: new Date().toISOString().slice(0, 10),
         currency: invoice.currency,
-        from_party: invoice.from_party,
+        from_party: fromPartyWithDocumentAssets(invoice),
         to_party: invoice.to_party,
         items: [{ id: crypto.randomUUID(), description: `Payment for invoice #${invoice.doc_number}`, quantity: 1, price: amountPaid }],
         tax_rate: 0,
@@ -354,7 +374,7 @@ function DocumentsPage() {
       issue_date: source.issue_date,
       due_date: source.due_date,
       currency: source.currency,
-      from_party: source.from_party,
+      from_party: fromPartyWithDocumentAssets(source),
       to_party: source.to_party,
       items: source.items,
       tax_rate: source.tax_rate,

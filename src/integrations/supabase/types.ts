@@ -72,6 +72,7 @@ export type Database = {
         Row: {
           accent_color: string
           brand_id: string | null
+          company_stamp_data: string | null
           created_at: string
           currency: string
           discount: number
@@ -84,9 +85,12 @@ export type Database = {
           items: Json
           notes: string
           primary_color: string
+          qr_text: string
           signature_data: string | null
           signature_name: string
           signature_title: string
+          show_company_stamp: boolean
+          show_qr: boolean
           status: string
           tax_rate: number
           template: string
@@ -99,6 +103,7 @@ export type Database = {
         Insert: {
           accent_color?: string
           brand_id?: string | null
+          company_stamp_data?: string | null
           created_at?: string
           currency?: string
           discount?: number
@@ -111,9 +116,12 @@ export type Database = {
           items?: Json
           notes?: string
           primary_color?: string
+          qr_text?: string
           signature_data?: string | null
           signature_name?: string
           signature_title?: string
+          show_company_stamp?: boolean
+          show_qr?: boolean
           status?: string
           tax_rate?: number
           template?: string
@@ -126,6 +134,7 @@ export type Database = {
         Update: {
           accent_color?: string
           brand_id?: string | null
+          company_stamp_data?: string | null
           created_at?: string
           currency?: string
           discount?: number
@@ -138,9 +147,12 @@ export type Database = {
           items?: Json
           notes?: string
           primary_color?: string
+          qr_text?: string
           signature_data?: string | null
           signature_name?: string
           signature_title?: string
+          show_company_stamp?: boolean
+          show_qr?: boolean
           status?: string
           tax_rate?: number
           template?: string
