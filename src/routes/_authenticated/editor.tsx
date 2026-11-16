@@ -44,6 +44,12 @@ import { exportDocx } from "@/lib/letterhead/docx-export";
 import { exportPng } from "@/lib/letterhead/png-export";
 import { downloadHtmlEmail } from "@/lib/letterhead/html-email";
 import { createShareLink, shareUrl } from "@/lib/letterhead/share";
+import {
+  colorsForLetter,
+  resolveBrandColors,
+  sameColors,
+  type ColorPair,
+} from "@/lib/letterhead/brand-colors";
 import { invokeEdgeFunction } from "@/lib/edge-functions";
 
 const searchSchema = z.object({ id: z.string().optional() });
@@ -73,6 +79,8 @@ function Editor() {
 
   const [brand, setBrand] = useState<Brand>(emptyBrand);
   const [letter, setLetter] = useState<Letterhead>(DEFAULT_LETTERHEAD);
+  /** The brand's colours, taken from its logo; null when there is no brand yet. */
+  const [brandColors, setBrandColors] = useState<ColorPair | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [cleaning, setCleaning] = useState(false);
@@ -121,6 +129,7 @@ function Editor() {
       }
 
       let next: Letterhead = DEFAULT_LETTERHEAD;
+      let fromBrand: ColorPair | null = null;
       if (brandRow) {
         let logoUrl: string | null = null;
         if (brandRow.logo_path) {
@@ -129,6 +138,11 @@ function Editor() {
             .createSignedUrl(brandRow.logo_path, 3600);
           logoUrl = signed?.signedUrl ?? null;
         }
+        fromBrand = await resolveBrandColors({
+          primary_color: brandRow.primary_color,
+          accent_color: brandRow.accent_color,
+          logo_url: logoUrl,
+        });
         if (cancelled) return;
         setBrand({
           company_name: brandRow.company_name ?? "",
@@ -137,16 +151,12 @@ function Editor() {
           website: brandRow.website ?? "",
           address: brandRow.address ?? "",
           logo_url: logoUrl,
-          primary_color: brandRow.primary_color,
-          accent_color: brandRow.accent_color,
+          ...fromBrand,
           watermark_text: (brandRow as { watermark_text?: string | null }).watermark_text ?? null,
         });
-        next = {
-          ...next,
-          primary_color: brandRow.primary_color,
-          accent_color: brandRow.accent_color,
-        };
+        next = { ...next, ...fromBrand };
       }
+      setBrandColors(fromBrand);
       if (letterRow) {
         next = {
           title: letterRow.title,
@@ -187,7 +197,10 @@ function Editor() {
         setShareLink(live ? shareUrl(live.token) : null);
       }
 
+      // The snapshot is the letter as stored, so a saved letter that picks up
+      // the brand colours below is written back by the autosave.
       savedSnapshotRef.current = id ? JSON.stringify(next) : "";
+      if (letterRow) next = { ...next, ...colorsForLetter(next, fromBrand) };
       setLetter(next);
       setSaveState("saved");
       setLoaded(true);
@@ -395,10 +408,12 @@ function Editor() {
       ...l,
       template: t.template,
       font_family: t.font_family,
-      primary_color: t.primary_color,
-      accent_color: t.accent_color,
+      // A theme sets the layout and font; the colours stay with the brand's logo.
+      ...(brandColors ?? { primary_color: t.primary_color, accent_color: t.accent_color }),
     }));
   };
+
+  const followsBrand = brandColors ? sameColors(letter, brandColors) : false;
 
   const previewScale = 0.6;
   const previewKey = useMemo(() => JSON.stringify({ brand, letter }), [brand, letter]);
@@ -506,7 +521,10 @@ function Editor() {
                   key={t.id}
                   onClick={() => applyTheme(t.id)}
                   className="border-2 border-[var(--nb-ink)] bg-card px-3 py-1 text-xs font-bold transition-transform hover:-rotate-2 hover:bg-accent hover:text-accent-foreground"
-                  style={{ borderColor: t.primary_color, color: t.primary_color }}
+                  style={{
+                    borderColor: brandColors?.primary_color ?? t.primary_color,
+                    color: brandColors?.primary_color ?? t.primary_color,
+                  }}
                 >
                   {t.name}
                 </button>
@@ -671,6 +689,27 @@ function Editor() {
                 onChange={(v) => set("accent_color", v)}
               />
             </div>
+            {brandColors && (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {followsBrand
+                    ? brand.logo_url
+                      ? "Matched to your brand logo."
+                      : "Matched to your brand colors."
+                    : "Custom colors for this letter."}
+                </p>
+                {!followsBrand && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setLetter((l) => ({ ...l, ...brandColors }))}
+                  >
+                    <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                    {brand.logo_url ? "Use logo colors" : "Use brand colors"}
+                  </Button>
+                )}
+              </div>
+            )}
           </Section>
 
           <Section title="Letter">
