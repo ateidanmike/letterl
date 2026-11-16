@@ -31,5 +31,8 @@ jobs:
           npm --version
           npm ci --prefer-online --no-audit --no-fund
 
+      - name: Test
+        run: npm test
+
       - name: Build
         run: npm run build
