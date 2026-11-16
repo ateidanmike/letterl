@@ -189,3 +189,14 @@
     mask-image: radial-gradient(ellipse at center, black 40%, transparent 75%);
   }
 }
+
+/* ---------- Landing page typography ---------- */
+@layer components {
+  .landing {
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  }
+  .landing-display {
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-optical-sizing: auto;
+  }
+}
