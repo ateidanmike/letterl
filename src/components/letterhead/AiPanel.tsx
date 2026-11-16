@@ -28,7 +28,7 @@ export function AiPanel({ body, onApplyBody, onSubject }: Props) {
   const call = async (action: string, payload: Record<string, unknown> = {}) => {
     setBusy(action);
     try {
-      const data = await invokeEdgeFunction<{ error?: string } & Record<string, unknown>>(
+      const data = await invokeEdgeFunction<{ error?: string; result?: string; suggestions?: string[] }>(
         "ai-assist",
         {
           body: { action, tone, language, text: body, ...payload },

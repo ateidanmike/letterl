@@ -31,6 +31,9 @@ jobs:
           npm --version
           npm ci --prefer-online --no-audit --no-fund
 
+      - name: Type-check
+        run: npm run typecheck
+
       - name: Test
         run: npm test
 
