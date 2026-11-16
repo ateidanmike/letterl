@@ -82,16 +82,18 @@ function ConfirmEmailPage() {
   }, [navigate]);
 
   return (
-    <div className="ambient-bg flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-md glass-strong border-0">
+    <div className="landing nb-dots flex min-h-screen items-center justify-center bg-[#FFF7E3] px-5 text-[#011B43]">
+      <Card className="w-full max-w-md bg-white text-[#011B43]">
         <CardHeader>
-          <Link to="/" className="mb-3 flex h-12 w-[176px] items-center justify-center rounded-xl bg-white px-3 py-1.5 shadow-sm ring-1 ring-border/60">
-            <img src="/logo to use.png" alt="Zuridoc" className="h-9 w-full object-contain object-center" />
-            </Link>
-          <CardTitle>{state === "checking" ? "Confirming email" : "Email confirmation"}</CardTitle>
+          <Link to="/" className="nb-focus mb-2 flex w-fit items-center">
+            <img src="/logo to use.png" alt="Zuridoc" className="h-14 w-auto object-contain" />
+          </Link>
+          <CardTitle className="text-3xl">
+            {state === "checking" ? "Confirming email" : "Email confirmation"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">{message}</p>
+          <p className="text-lg font-medium">{message}</p>
           {state !== "checking" && (
             <div className="grid gap-2 sm:grid-cols-2">
               <Button asChild>

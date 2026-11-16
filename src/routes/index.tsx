@@ -22,9 +22,6 @@ import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { GooglyEye } from "@/components/GooglyEye";
 
-const FONT_HREF =
-  "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Caveat:wght@600;700&display=swap";
-
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
@@ -53,11 +50,6 @@ export const Route = createFileRoute("/")({
         name: "twitter:description",
         content: "Create, customize and send branded business documents in minutes.",
       },
-    ],
-    links: [
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: FONT_HREF },
     ],
   }),
 });

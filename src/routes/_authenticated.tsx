@@ -39,38 +39,50 @@ function AuthLayout() {
 
   if (loading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
-        Loading…
+      <div className="ambient-bg flex min-h-screen items-center justify-center">
+        <p className="landing-hand animate-pulse text-4xl">fetching your paperwork…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-40 border-b-[3px] border-[var(--nb-ink)] bg-background">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-4 lg:gap-6">
             <Link
               to="/dashboard"
-              className="flex h-12 w-[170px] shrink-0 items-center justify-center rounded-xl bg-white px-4 py-2 shadow-sm sm:w-[190px]"
+              className="flex h-12 shrink-0 items-center border-2 border-[var(--nb-ink)] bg-white px-2 shadow-[3px_3px_0_0_var(--nb-ink)] transition-transform hover:-rotate-2"
               aria-label="Zuridoc dashboard"
             >
-              <img src="/logo to use.png" alt="Zuridoc" className="h-8 w-full object-contain object-center" />
+              <img src="/logo to use.png" alt="Zuridoc" className="h-11 w-auto object-contain" />
             </Link>
-            <nav className="hidden items-center gap-1 md:flex">
+            <nav className="hidden items-center gap-2 md:flex">
               {navItems.map((item) => (
-                <NavLink key={item.to} to={item.to}>{item.label}</NavLink>
+                <NavLink key={item.to} to={item.to}>
+                  {item.label}
+                </NavLink>
               ))}
             </nav>
           </div>
 
-          <Button className="hidden md:inline-flex" variant="ghost" size="sm" onClick={handleSignOut}>
-            Sign out
+          <Button
+            className="hidden md:inline-flex"
+            variant="outline"
+            size="sm"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4" /> Sign out
           </Button>
 
           <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open navigation menu">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="md:hidden"
+                aria-label="Open navigation menu"
+              >
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
@@ -80,22 +92,34 @@ function AuthLayout() {
                 <SheetDescription className="sr-only">Zuridoc app navigation</SheetDescription>
                 <Link
                   to="/dashboard"
-                  className="flex h-12 w-[180px] items-center justify-center rounded-xl bg-white px-4 py-2 shadow-sm"
+                  className="flex h-12 w-fit items-center border-2 border-[var(--nb-ink)] bg-white px-2 shadow-[3px_3px_0_0_var(--nb-ink)]"
                   aria-label="Zuridoc dashboard"
                 >
-                  <img src="/logo to use.png" alt="Zuridoc" className="h-8 w-full object-contain object-center" />
+                  <img
+                    src="/logo to use.png"
+                    alt="Zuridoc"
+                    className="h-11 w-auto object-contain"
+                  />
                 </Link>
               </SheetHeader>
               <nav className="mt-8 grid gap-2">
                 {navItems.map((item) => (
                   <SheetClose asChild key={item.to}>
-                    <NavLink to={item.to} onClick={() => setMobileNavOpen(false)} className="w-full justify-start px-4 py-3 text-base">
+                    <NavLink
+                      to={item.to}
+                      onClick={() => setMobileNavOpen(false)}
+                      className="w-full justify-start px-4 py-3 text-base"
+                    >
                       {item.label}
                     </NavLink>
                   </SheetClose>
                 ))}
               </nav>
-              <Button variant="outline" className="mt-8 w-full justify-start" onClick={handleSignOut}>
+              <Button
+                variant="outline"
+                className="mt-8 w-full justify-start"
+                onClick={handleSignOut}
+              >
                 <LogOut className="h-4 w-4" /> Sign out
               </Button>
             </SheetContent>
@@ -109,9 +133,19 @@ function AuthLayout() {
   );
 }
 
-function NavLink({ to, children, className = "", onClick }: { to: string; children: React.ReactNode; className?: string; onClick?: () => void }) {
-  const baseClass = `inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground ${className}`;
-  const activeClass = `inline-flex items-center rounded-md bg-secondary px-3 py-2 text-sm font-medium text-foreground ${className}`;
+function NavLink({
+  to,
+  children,
+  className = "",
+  onClick,
+}: {
+  to: string;
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}) {
+  const baseClass = `inline-flex items-center border-2 border-transparent px-3 py-1.5 text-sm font-bold transition-transform hover:-rotate-1 hover:border-[var(--nb-ink)] hover:bg-card ${className}`;
+  const activeClass = `inline-flex -rotate-1 items-center border-2 border-[var(--nb-ink)] bg-secondary px-3 py-1.5 text-sm font-extrabold text-secondary-foreground shadow-[3px_3px_0_0_var(--nb-ink)] ${className}`;
 
   return (
     <Link to={to} className={baseClass} activeProps={{ className: activeClass }} onClick={onClick}>
@@ -119,4 +153,3 @@ function NavLink({ to, children, className = "", onClick }: { to: string; childr
     </Link>
   );
 }
-
