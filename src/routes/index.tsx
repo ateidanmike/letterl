@@ -1,14 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
-import {
-  AnimatePresence,
-  MotionConfig,
-  motion,
-  useAnimationControls,
-  useReducedMotion,
-  useSpring,
-} from "framer-motion";
+import { AnimatePresence, MotionConfig, motion, useAnimationControls } from "framer-motion";
 import {
   ArrowRight,
   Banknote,
@@ -27,6 +20,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { GooglyEye } from "@/components/GooglyEye";
 
 const FONT_HREF =
   "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Caveat:wght@600;700&display=swap";
@@ -415,56 +409,6 @@ function Sticker({
       className={`nb-scribble nb-wiggle inline-block border-[3px] border-[#011B43] px-4 py-1.5 text-sm font-extrabold uppercase tracking-[0.12em] ${className}`}
     >
       {children}
-    </span>
-  );
-}
-
-function GooglyEye({ size = 46 }: { size?: number }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const reduced = useReducedMotion();
-  const x = useSpring(0, { stiffness: 320, damping: 9 });
-  const y = useSpring(0, { stiffness: 320, damping: 9 });
-
-  useEffect(() => {
-    if (reduced) return;
-    const reach = size * 0.2;
-    let lastMove = 0;
-    const onMove = (event: PointerEvent) => {
-      const element = ref.current;
-      if (!element) return;
-      const rect = element.getBoundingClientRect();
-      const dx = event.clientX - (rect.left + rect.width / 2);
-      const dy = event.clientY - (rect.top + rect.height / 2);
-      const distance = Math.hypot(dx, dy) || 1;
-      const scale = Math.min(reach, distance / 6) / distance;
-      x.set(dx * scale);
-      y.set(dy * scale);
-      lastMove = Date.now();
-    };
-    // With no pointer around (phones), the eyes wander on their own.
-    const idle = window.setInterval(() => {
-      if (Date.now() - lastMove < 2500) return;
-      const angle = Math.random() * Math.PI * 2;
-      x.set(Math.cos(angle) * reach);
-      y.set(Math.sin(angle) * reach);
-    }, 1700);
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.clearInterval(idle);
-    };
-  }, [reduced, size, x, y]);
-
-  return (
-    <span
-      ref={ref}
-      style={{ width: size, height: size }}
-      className="inline-flex items-center justify-center rounded-full border-[3px] border-[#011B43] bg-white"
-    >
-      <motion.span
-        style={{ x, y, width: size * 0.42, height: size * 0.42 }}
-        className="rounded-full bg-[#011B43]"
-      />
     </span>
   );
 }

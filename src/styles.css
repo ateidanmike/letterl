@@ -253,6 +253,25 @@
     transform: translate(5px, 5px);
     box-shadow: 0 0 0 0 var(--nb-ink);
   }
+  .nb-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+    box-shadow: 5px 5px 0 0 var(--nb-ink);
+  }
+  /* Form field that lifts onto a coloured shadow when focused. */
+  .nb-input {
+    border: 3px solid var(--nb-ink);
+    background: #ffffff;
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease;
+  }
+  .nb-input:focus {
+    outline: none;
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 0 #0067ec;
+  }
   .nb-btn:focus-visible,
   .nb-focus:focus-visible {
     outline: 3px solid #ff7aa2;
