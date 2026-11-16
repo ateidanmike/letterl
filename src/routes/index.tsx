@@ -1,24 +1,35 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { AnimatePresence, MotionConfig, motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import {
+  AnimatePresence,
+  MotionConfig,
+  motion,
+  useAnimationControls,
+  useReducedMotion,
+  useSpring,
+} from "framer-motion";
 import {
   ArrowRight,
-  ArrowUpRight,
-  Check,
+  Banknote,
+  Calculator,
   FileDown,
+  Mail,
   Menu,
   Palette,
   PenLine,
   QrCode,
+  ReceiptText,
   Send,
   Sparkles,
-  Stamp,
+  Truck,
   X,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 const FONT_HREF =
-  "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap";
+  "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Caveat:wght@600;700&display=swap";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -56,6 +67,13 @@ export const Route = createFileRoute("/")({
     ],
   }),
 });
+
+const INK = "#011B43";
+const BLUE = "#0067EC";
+const YELLOW = "#FFD43B";
+const PINK = "#FF7AA2";
+const MINT = "#6EE7B7";
+const SKY = "#9CC8FF";
 
 const navItems = [
   { label: "Documents", href: "#documents" },
@@ -100,71 +118,117 @@ const lineItems = [
   { description: "Delivery and assembly", qty: 1, price: 6500 },
 ];
 
-const documentTypes = [
+const documentTypes: {
+  name: string;
+  quip: string;
+  body: string;
+  icon: LucideIcon;
+  color: string;
+  tilt: number;
+}[] = [
   {
     name: "Invoices",
+    quip: "Ask for your money, beautifully.",
     body: "Bill clients for products or services, with tax, discounts and payment status.",
-    href: "#top",
+    icon: Banknote,
+    color: YELLOW,
+    tilt: -2,
   },
-  { name: "Quotations", body: "Send a price estimate your client can say yes to.", href: "#top" },
-  { name: "Receipts", body: "Confirm a payment the moment it lands.", href: "#top" },
+  {
+    name: "Quotations",
+    quip: "A price they can say yes to.",
+    body: "Send a clear estimate before the work starts.",
+    icon: Calculator,
+    color: PINK,
+    tilt: 1.5,
+  },
+  {
+    name: "Receipts",
+    quip: "Proof that it happened.",
+    body: "Confirm a payment the moment it lands.",
+    icon: ReceiptText,
+    color: MINT,
+    tilt: -1,
+  },
   {
     name: "Delivery notes",
+    quip: "It arrived. Here's who signed.",
     body: "List what shipped and leave room for a signature on arrival.",
-    href: "#top",
+    icon: Truck,
+    color: SKY,
+    tilt: 2,
   },
   {
     name: "Letterheads",
-    body: "Write official letters on your own stationery, with AI help on the wording.",
-    href: "#top",
+    quip: "Official letters that look official.",
+    body: "Write on your own stationery, with AI help on the wording.",
+    icon: Mail,
+    color: "#FFFFFF",
+    tilt: -1.5,
   },
 ];
 
 const steps = [
   {
     word: "Create",
+    color: YELLOW,
     body: "Pick a document type and a template. Your business details, logo and colours are already in place.",
   },
   {
     word: "Customize",
+    color: PINK,
     body: "Add line items, terms and notes. Sign it, stamp it, drop in a QR code, or ask the AI assistant to draft the letter.",
   },
   {
     word: "Send",
+    color: MINT,
     body: "Export to PDF, Word or PNG, copy it as an email, or send a share link. Mark it sent, then paid.",
   },
 ];
 
-const features = [
+const badHabits = [
+  "Opening Invoice_FINAL_final_v7.docx",
+  "Copying last month's invoice and hoping you changed every number",
+  "Printing a page just to sign it and scan it back",
+  "Stretching your logo until it looks… like that",
+];
+
+const features: { icon: LucideIcon; title: string; body: string; color: string }[] = [
   {
     icon: Palette,
     title: "One brand kit",
     body: "Upload your logo once. Zuridoc picks up its colours and applies them to every document you make.",
+    color: YELLOW,
   },
   {
     icon: Sparkles,
     title: "AI writing help",
     body: "Describe the letter you need and get a draft in your tone. Edit every word before it goes out.",
+    color: PINK,
   },
   {
     icon: PenLine,
     title: "Signature and stamp",
-    body: "Draw your signature on screen and add your company stamp, so nothing has to be printed to be signed.",
+    body: "Draw your signature on screen and add your company stamp. No printer was harmed.",
+    color: MINT,
   },
   {
     icon: QrCode,
     title: "QR codes",
     body: "Add a QR code to any document, so whoever is holding the paper can scan it to check the details.",
+    color: SKY,
   },
   {
     icon: FileDown,
     title: "Every format",
     body: "PDF for sending, Word for editing, PNG for chat apps, and HTML for pasting straight into an email.",
+    color: YELLOW,
   },
   {
     icon: Send,
     title: "Share and track",
     body: "Send a link instead of an attachment, and keep each document's status: draft, sent, partial or paid.",
+    color: PINK,
   },
 ];
 
@@ -195,6 +259,14 @@ const faqs = [
   ],
 ];
 
+const mascotLines = [
+  "Send me already!",
+  "I look great in PDF.",
+  "Please don't print me.",
+  "Pay me. Politely.",
+  "Nice logo. Is it new?",
+];
+
 const money = (value: number) => value.toLocaleString("en-KE");
 
 function Index() {
@@ -204,7 +276,10 @@ function Index() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div id="top" className="landing min-h-screen scroll-smooth bg-[#F6F4EE] text-[#011B43]">
+      <div
+        id="top"
+        className="landing min-h-screen scroll-smooth overflow-x-clip bg-[#FFF7E3] text-[#011B43]"
+      >
         <SiteHeader
           primaryHref={primaryHref}
           primaryLabel={primaryLabel}
@@ -212,10 +287,20 @@ function Index() {
         />
         <main>
           <Hero primaryHref={primaryHref} primaryLabel={primaryLabel} />
+          <Marquee
+            items={["Invoices", "Quotations", "Receipts", "Delivery notes", "Letterheads"]}
+            className="bg-[#0067EC] text-white"
+          />
           <DocumentsSection />
           <StepsSection />
+          <BadHabitsSection primaryHref={primaryHref} />
           <FeaturesSection />
           <FaqSection />
+          <Marquee
+            items={["Create", "Customize", "Send", "Get paid", "Repeat"]}
+            className="bg-[#FF7AA2]"
+            reverse
+          />
           <FinalCta primaryHref={primaryHref} primaryLabel={primaryLabel} />
         </main>
         <Footer primaryHref={primaryHref} primaryLabel={primaryLabel} />
@@ -223,6 +308,311 @@ function Index() {
     </MotionConfig>
   );
 }
+
+/* ------------------------------ Hand-drawn bits ------------------------------ */
+
+function Squiggle({ className = "", color = BLUE }: { className?: string; color?: string }) {
+  return (
+    <svg
+      viewBox="0 0 300 24"
+      fill="none"
+      preserveAspectRatio="none"
+      aria-hidden
+      className={className}
+    >
+      <motion.path
+        d="M4 14c22-12 34 10 56 0s34-12 56-1 34 10 56 0 34-11 56-1 40 8 68-3"
+        stroke={color}
+        strokeWidth="6"
+        strokeLinecap="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.9, delay: 0.5, ease: "easeInOut" }}
+      />
+    </svg>
+  );
+}
+
+function DoodleArrow({ className = "", color = INK }: { className?: string; color?: string }) {
+  return (
+    <svg viewBox="0 0 120 80" fill="none" aria-hidden className={className}>
+      <path
+        d="M6 12c30-8 70 4 86 44"
+        stroke={color}
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeDasharray="2 9"
+      />
+      <path
+        d="M72 50l21 10 6-24"
+        stroke={color}
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function DoodleStar({
+  className = "",
+  color = YELLOW,
+  spin = false,
+}: {
+  className?: string;
+  color?: string;
+  spin?: boolean;
+}) {
+  return (
+    <svg viewBox="0 0 60 60" aria-hidden className={`${className} ${spin ? "nb-spin" : ""}`}>
+      <path
+        d="M30 3c2 14 6 20 26 26-19 4-24 11-26 28-3-17-8-23-27-27C22 25 27 18 30 3z"
+        fill={color}
+        stroke={INK}
+        strokeWidth="3"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function Starburst({ className = "", children }: { className?: string; children: ReactNode }) {
+  const points = Array.from({ length: 32 }, (_, index) => {
+    const radius = index % 2 === 0 ? 48 : 38;
+    const angle = (Math.PI * 2 * index) / 32;
+    return `${(50 + radius * Math.cos(angle)).toFixed(2)},${(50 + radius * Math.sin(angle)).toFixed(2)}`;
+  }).join(" ");
+  return (
+    <div className={className}>
+      <svg viewBox="0 0 100 100" aria-hidden className="nb-spin h-full w-full">
+        <polygon
+          points={points}
+          fill={YELLOW}
+          stroke={INK}
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <div className="absolute inset-0 flex -rotate-12 flex-col items-center justify-center text-center font-extrabold leading-none">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Sticker({
+  children,
+  color = YELLOW,
+  className = "",
+}: {
+  children: ReactNode;
+  color?: string;
+  className?: string;
+}) {
+  return (
+    <span
+      style={{ backgroundColor: color }}
+      className={`nb-scribble nb-wiggle inline-block border-[3px] border-[#011B43] px-4 py-1.5 text-sm font-extrabold uppercase tracking-[0.12em] ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function GooglyEye({ size = 46 }: { size?: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const reduced = useReducedMotion();
+  const x = useSpring(0, { stiffness: 320, damping: 9 });
+  const y = useSpring(0, { stiffness: 320, damping: 9 });
+
+  useEffect(() => {
+    if (reduced) return;
+    const reach = size * 0.2;
+    let lastMove = 0;
+    const onMove = (event: PointerEvent) => {
+      const element = ref.current;
+      if (!element) return;
+      const rect = element.getBoundingClientRect();
+      const dx = event.clientX - (rect.left + rect.width / 2);
+      const dy = event.clientY - (rect.top + rect.height / 2);
+      const distance = Math.hypot(dx, dy) || 1;
+      const scale = Math.min(reach, distance / 6) / distance;
+      x.set(dx * scale);
+      y.set(dy * scale);
+      lastMove = Date.now();
+    };
+    // With no pointer around (phones), the eyes wander on their own.
+    const idle = window.setInterval(() => {
+      if (Date.now() - lastMove < 2500) return;
+      const angle = Math.random() * Math.PI * 2;
+      x.set(Math.cos(angle) * reach);
+      y.set(Math.sin(angle) * reach);
+    }, 1700);
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.clearInterval(idle);
+    };
+  }, [reduced, size, x, y]);
+
+  return (
+    <span
+      ref={ref}
+      style={{ width: size, height: size }}
+      className="inline-flex items-center justify-center rounded-full border-[3px] border-[#011B43] bg-white"
+    >
+      <motion.span
+        style={{ x, y, width: size * 0.42, height: size * 0.42 }}
+        className="rounded-full bg-[#011B43]"
+      />
+    </span>
+  );
+}
+
+function Mascot() {
+  const [line, setLine] = useState(0);
+  const controls = useAnimationControls();
+
+  const poke = () => {
+    setLine((value) => (value + 1) % mascotLines.length);
+    void controls.start({
+      y: [0, -34, 0, -10, 0],
+      rotate: [-4, 6, -8, 2, -4],
+      transition: { duration: 0.7, ease: "easeOut" },
+    });
+  };
+
+  return (
+    <div className="relative mx-auto w-fit pt-20">
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={line}
+          initial={{ scale: 0.4, rotate: -12, opacity: 0 }}
+          animate={{ scale: 1, rotate: -4, opacity: 1 }}
+          exit={{ scale: 0.6, opacity: 0 }}
+          transition={{ type: "spring", stiffness: 380, damping: 14 }}
+          className="landing-hand nb-scribble absolute left-0 right-0 top-0 mx-auto w-max max-w-[15rem] border-[3px] border-[#011B43] bg-white px-5 py-2 text-center text-2xl leading-tight"
+        >
+          {mascotLines[line]}
+        </motion.p>
+      </AnimatePresence>
+      <motion.button
+        type="button"
+        onClick={poke}
+        aria-label="Poke the Zuridoc mascot for another line"
+        animate={controls}
+        initial={{ rotate: -4 }}
+        whileHover={{ scale: 1.04 }}
+        whileTap={{ scale: 0.94 }}
+        className="nb-focus relative block cursor-pointer"
+      >
+        <motion.div
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          className="relative"
+        >
+          <motion.svg
+            viewBox="0 0 60 60"
+            aria-hidden
+            className="absolute -right-12 top-16 h-14 w-14 origin-bottom-left"
+            animate={{ rotate: [0, -28, 8, -28, 0] }}
+            transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 1.2 }}
+          >
+            <path
+              d="M4 54C18 44 30 30 40 10"
+              stroke={INK}
+              strokeWidth="5"
+              strokeLinecap="round"
+              fill="none"
+            />
+            <circle cx="42" cy="9" r="7" fill="#fff" stroke={INK} strokeWidth="4" />
+          </motion.svg>
+          <svg viewBox="0 0 60 60" aria-hidden className="absolute -left-11 top-24 h-12 w-12">
+            <path
+              d="M56 6C40 14 24 30 14 50"
+              stroke={INK}
+              strokeWidth="5"
+              strokeLinecap="round"
+              fill="none"
+            />
+            <circle cx="12" cy="51" r="7" fill="#fff" stroke={INK} strokeWidth="4" />
+          </svg>
+          <div className="nb-box-lg relative h-60 w-44 bg-white px-5 pt-9">
+            <span
+              aria-hidden
+              className="absolute -right-[3px] -top-[3px] h-9 w-9 border-b-[3px] border-l-[3px] border-[#011B43] bg-[#FFD43B]"
+            />
+            <div className="flex justify-center gap-2">
+              <GooglyEye />
+              <GooglyEye />
+            </div>
+            <svg viewBox="0 0 80 34" aria-hidden className="mx-auto mt-3 h-8 w-20">
+              <path
+                d="M8 8c10 22 54 22 64 0"
+                stroke={INK}
+                strokeWidth="5"
+                strokeLinecap="round"
+                fill="none"
+              />
+              <path
+                d="M30 22c4 8 16 8 20 0z"
+                fill={PINK}
+                stroke={INK}
+                strokeWidth="3"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <div className="mt-5 space-y-2.5" aria-hidden>
+              <div className="h-2.5 w-full rounded-full bg-[#011B43]/20" />
+              <div className="h-2.5 w-4/5 rounded-full bg-[#011B43]/20" />
+              <div className="h-2.5 w-3/5 rounded-full bg-[#0067EC]" />
+            </div>
+          </div>
+          <div className="flex justify-center gap-10" aria-hidden>
+            <span className="h-7 w-[5px] rounded-b-full bg-[#011B43]" />
+            <span className="h-7 w-[5px] rounded-b-full bg-[#011B43]" />
+          </div>
+        </motion.div>
+      </motion.button>
+    </div>
+  );
+}
+
+function Marquee({
+  items,
+  className = "",
+  reverse = false,
+}: {
+  items: string[];
+  className?: string;
+  reverse?: boolean;
+}) {
+  const run = [...items, ...items, ...items, ...items];
+  return (
+    <div
+      aria-hidden
+      className={`overflow-hidden border-y-[3px] border-[#011B43] py-3.5 ${className}`}
+    >
+      <div className={`nb-marquee ${reverse ? "nb-marquee-reverse" : ""}`}>
+        {[0, 1].map((half) => (
+          <div key={half} className="flex shrink-0 items-center">
+            {run.map((item, index) => (
+              <span
+                key={`${half}-${index}`}
+                className="flex items-center gap-6 pr-6 text-2xl font-extrabold uppercase tracking-tight sm:text-3xl"
+              >
+                {item}
+                <DoodleStar className="h-7 w-7" />
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------- Header ---------------------------------- */
 
 function SiteHeader({
   primaryHref,
@@ -237,36 +627,39 @@ function SiteHeader({
   const close = () => setOpen(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#011B43]/10 bg-[#F6F4EE]/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
-        <Link to="/" className="flex shrink-0 items-center" aria-label="Zuridoc home">
+    <header className="sticky top-0 z-40 border-b-[3px] border-[#011B43] bg-[#FFF7E3]">
+      <div className="mx-auto flex h-[68px] max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
+        <Link to="/" className="nb-focus flex shrink-0 items-center" aria-label="Zuridoc home">
           <img src="/logo to use.png" alt="Zuridoc" className="h-14 w-auto object-contain" />
         </Link>
-        <nav
-          className="hidden items-center gap-8 text-sm font-medium text-[#011B43]/70 md:flex"
-          aria-label="Main"
-        >
-          {navItems.map((item) => (
-            <a key={item.href} href={item.href} className="transition-colors hover:text-[#011B43]">
+        <nav className="hidden items-center gap-1 text-[15px] font-bold md:flex" aria-label="Main">
+          {navItems.map((item, index) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className={`nb-focus rounded-md border-[3px] border-transparent px-3 py-1.5 transition-transform hover:border-[#011B43] hover:bg-white ${
+                index % 2 === 0 ? "hover:-rotate-2" : "hover:rotate-2"
+              }`}
+            >
               {item.label}
             </a>
           ))}
         </nav>
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-3 md:flex">
           {!signedIn && (
             <Link
               to="/login"
-              className="rounded-full px-4 py-2 text-sm font-semibold text-[#011B43]/80 transition-colors hover:text-[#011B43]"
+              className="nb-focus px-2 py-2 text-[15px] font-bold underline decoration-[3px] underline-offset-4 hover:decoration-[#FF7AA2]"
             >
               Sign in
             </Link>
           )}
           <Link
             to={primaryHref}
-            className="inline-flex items-center gap-2 rounded-full bg-[#011B43] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0067EC]"
+            className="nb-btn inline-flex items-center gap-2 bg-[#FFD43B] px-5 py-2 text-[15px] font-extrabold"
           >
             {primaryLabel}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4" strokeWidth={3} />
           </Link>
         </div>
         <button
@@ -274,14 +667,18 @@ function SiteHeader({
           aria-label={open ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#011B43]/15 text-[#011B43] md:hidden"
+          className="nb-btn inline-flex h-11 w-11 items-center justify-center bg-[#FFD43B] md:hidden"
         >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {open ? (
+            <X className="h-5 w-5" strokeWidth={3} />
+          ) : (
+            <Menu className="h-5 w-5" strokeWidth={3} />
+          )}
         </button>
       </div>
       {open && (
         <nav
-          className="border-t border-[#011B43]/10 bg-[#F6F4EE] px-5 pb-5 pt-2 md:hidden"
+          className="border-t-[3px] border-[#011B43] bg-[#FFF7E3] px-5 pb-6 pt-3 md:hidden"
           aria-label="Mobile"
         >
           {navItems.map((item) => (
@@ -289,7 +686,7 @@ function SiteHeader({
               key={item.href}
               href={item.href}
               onClick={close}
-              className="block border-b border-[#011B43]/10 py-3.5 text-base font-semibold"
+              className="block border-b-[3px] border-dashed border-[#011B43]/30 py-3.5 text-lg font-extrabold"
             >
               {item.label}
             </a>
@@ -298,7 +695,7 @@ function SiteHeader({
             <Link
               to="/login"
               onClick={close}
-              className="block border-b border-[#011B43]/10 py-3.5 text-base font-semibold"
+              className="block border-b-[3px] border-dashed border-[#011B43]/30 py-3.5 text-lg font-extrabold"
             >
               Sign in
             </Link>
@@ -306,10 +703,10 @@ function SiteHeader({
           <Link
             to={primaryHref}
             onClick={close}
-            className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#011B43] text-base font-semibold text-white"
+            className="nb-btn mt-5 inline-flex w-full items-center justify-center gap-2 bg-[#FFD43B] py-3 text-lg font-extrabold"
           >
             {primaryLabel}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-5 w-5" strokeWidth={3} />
           </Link>
         </nav>
       )}
@@ -317,58 +714,89 @@ function SiteHeader({
   );
 }
 
+/* ----------------------------------- Hero ----------------------------------- */
+
 function Hero({ primaryHref, primaryLabel }: { primaryHref: string; primaryLabel: string }) {
   return (
-    <section className="mx-auto grid max-w-7xl gap-12 px-5 pb-16 pt-12 sm:px-8 sm:pt-16 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-14 lg:pb-24 lg:pt-20">
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="min-w-0"
-      >
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#0067EC]">
-          Create. Customize. Send.
-        </p>
-        <h1 className="landing-display mt-5 text-[clamp(2.6rem,7.2vw,4.75rem)] font-medium leading-[1.02] tracking-[-0.02em]">
-          Paperwork that looks as good as <em className="font-normal text-[#0067EC]">your work.</em>
-        </h1>
-        <p className="mt-6 max-w-xl text-lg leading-8 text-[#011B43]/75">
-          Set up your brand once. Zuridoc puts it on every invoice, quotation, receipt, delivery
-          note and letter you send, ready as a PDF in minutes.
-        </p>
-        <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Link
-            to={primaryHref}
-            className="group inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[#0067EC] px-8 text-base font-semibold text-white transition-colors hover:bg-[#011B43]"
+    <section className="nb-dots relative">
+      <div className="mx-auto grid max-w-7xl gap-20 px-5 pb-20 pt-12 sm:px-8 sm:pt-16 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14 lg:pb-28 lg:pt-20">
+        <div className="relative min-w-0">
+          <motion.div
+            initial={{ rotate: -14, scale: 0.6 }}
+            animate={{ rotate: -3, scale: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 12 }}
+            className="w-fit"
           >
-            {primaryLabel}
-            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-          </Link>
-          <a
-            href="#how-it-works"
-            className="inline-flex h-14 items-center justify-center rounded-full border border-[#011B43]/20 px-8 text-base font-semibold transition-colors hover:border-[#011B43]"
-          >
-            See how it works
-          </a>
-        </div>
-        <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-[#011B43]/70">
-          {["Free to start", "No design skills needed", "Works on your phone"].map((item) => (
-            <li key={item} className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-[#0067EC]" />
-              {item}
-            </li>
-          ))}
-        </ul>
-      </motion.div>
+            <Sticker>Create. Customize. Send.</Sticker>
+          </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 28 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.12, ease: "easeOut" }}
-        className="min-w-0"
-      >
-        <DocumentDemo />
-      </motion.div>
+          <h1 className="mt-6 text-[clamp(2.9rem,9vw,5.4rem)] font-extrabold leading-[0.97] tracking-[-0.035em]">
+            <span className="relative inline-block">
+              Paperwork
+              <Squiggle className="absolute -bottom-2 left-0 h-4 w-full sm:-bottom-3 sm:h-5" />
+            </span>{" "}
+            that looks as good as{" "}
+            <motion.span
+              initial={{ rotate: 0 }}
+              animate={{ rotate: -2 }}
+              transition={{ type: "spring", stiffness: 200, damping: 8, delay: 0.3 }}
+              className="mt-2 inline-block border-[3px] border-[#011B43] bg-[#FFD43B] px-3 pb-1 shadow-[5px_5px_0_0_#011B43]"
+            >
+              your work.
+            </motion.span>
+          </h1>
+
+          <p className="mt-8 max-w-xl text-lg font-medium leading-8 sm:text-xl sm:leading-9">
+            Set up your brand once. Zuridoc puts it on every invoice, quotation, receipt, delivery
+            note and letter you send, ready as a PDF in minutes.
+          </p>
+
+          <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <Link
+              to={primaryHref}
+              className="nb-btn group inline-flex h-16 items-center justify-center gap-3 bg-[#0067EC] px-9 text-lg font-extrabold text-white"
+            >
+              {primaryLabel}
+              <ArrowRight
+                className="h-6 w-6 transition-transform group-hover:translate-x-1.5"
+                strokeWidth={3}
+              />
+            </Link>
+            <a
+              href="#how-it-works"
+              className="nb-btn inline-flex h-16 items-center justify-center bg-white px-9 text-lg font-extrabold"
+            >
+              See how it works
+            </a>
+          </div>
+
+          <ul className="mt-9 flex flex-wrap gap-3 text-sm font-extrabold">
+            {[
+              { text: "Free to start", color: MINT, tilt: "-rotate-2" },
+              { text: "No design skills needed", color: PINK, tilt: "rotate-1" },
+              { text: "Works on your phone", color: SKY, tilt: "-rotate-1" },
+            ].map((item) => (
+              <li
+                key={item.text}
+                style={{ backgroundColor: item.color }}
+                className={`nb-wiggle border-[3px] border-[#011B43] px-3 py-1.5 ${item.tilt}`}
+              >
+                {item.text}
+              </li>
+            ))}
+          </ul>
+
+          <DoodleStar className="absolute -top-6 right-2 hidden h-12 w-12 sm:block" spin />
+        </div>
+
+        <div className="relative min-w-0">
+          <p className="landing-hand absolute -top-12 left-2 z-10 -rotate-3 text-3xl sm:left-6">
+            psst… click stuff!
+          </p>
+          <DoodleArrow className="absolute -top-10 left-48 z-10 h-14 w-20 sm:left-56" />
+          <DocumentDemo />
+        </div>
+      </div>
     </section>
   );
 }
@@ -376,14 +804,28 @@ function Hero({ primaryHref, primaryLabel }: { primaryHref: string; primaryLabel
 function DocumentDemo() {
   const [sampleId, setSampleId] = useState<SampleId>("invoice");
   const [color, setColor] = useState(brandColors[0].value);
+  const paper = useAnimationControls();
   const sample = samples.find((item) => item.id === sampleId) ?? samples[0];
 
+  const pickColor = (value: string) => {
+    setColor(value);
+    void paper.start({
+      rotate: [0, -2.5, 2, -1, 0],
+      transition: { duration: 0.45 },
+    });
+  };
+
   return (
-    <div className="rounded-[28px] bg-[#011B43] p-4 sm:p-7">
+    <div className="nb-box-lg relative bg-[#0067EC] p-4 sm:p-6">
+      <Starburst className="absolute -right-3 -top-20 z-20 h-24 w-24 sm:-right-12 sm:-top-24 sm:h-28 sm:w-28">
+        <span className="text-[10px] uppercase tracking-wider sm:text-xs">done in</span>
+        <span className="text-xl sm:text-2xl">5 min</span>
+      </Starburst>
+
       <div
         role="tablist"
         aria-label="Document type"
-        className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1"
+        className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 pt-1"
       >
         {samples.map((item) => {
           const active = item.id === sampleId;
@@ -394,10 +836,10 @@ function DocumentDemo() {
               role="tab"
               aria-selected={active}
               onClick={() => setSampleId(item.id)}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+              className={`nb-focus shrink-0 border-[3px] border-[#011B43] px-3 py-1.5 text-[13px] font-extrabold transition-transform ${
                 active
-                  ? "bg-white text-[#011B43]"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
+                  ? "-translate-y-0.5 -rotate-2 bg-[#FFD43B] shadow-[3px_3px_0_0_#011B43]"
+                  : "bg-white hover:-translate-y-0.5 hover:rotate-1"
               }`}
             >
               {item.tab}
@@ -406,31 +848,34 @@ function DocumentDemo() {
         })}
       </div>
 
-      <div className="@container relative mx-auto mt-6 w-full max-w-[430px]">
+      <div className="@container relative mx-auto mt-5 w-full max-w-[430px]">
         <div
           aria-hidden
-          className="absolute inset-0 translate-x-3 translate-y-3 rotate-[2.5deg] rounded-[3px] bg-white/25"
+          className="absolute inset-0 translate-x-3 translate-y-3 rotate-[3deg] border-[3px] border-[#011B43] bg-[#FF7AA2]"
         />
-        <div className="relative aspect-[1/1.38] overflow-hidden rounded-[3px] bg-white text-[2.55cqw] text-slate-800 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.6)]">
+        <motion.div
+          animate={paper}
+          className="relative aspect-[1/1.38] overflow-hidden border-[3px] border-[#011B43] bg-white text-[2.55cqw] text-slate-800"
+        >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={sample.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.22 }}
-              className="absolute inset-0 flex flex-col"
+              initial={{ y: "-105%", rotate: -5 }}
+              animate={{ y: 0, rotate: 0 }}
+              exit={{ y: "105%", rotate: 5 }}
+              transition={{ type: "spring", stiffness: 240, damping: 22 }}
+              className="absolute inset-0 flex flex-col bg-white"
             >
               <SamplePaper sample={sample} color={color} />
             </motion.div>
           </AnimatePresence>
-        </div>
+        </motion.div>
       </div>
 
-      <div className="mt-7 flex flex-wrap items-center justify-between gap-4">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
-            Brand colour
+          <span className="landing-hand -rotate-2 whitespace-nowrap text-2xl text-white">
+            your colour →
           </span>
           <div className="flex gap-2">
             {brandColors.map((item) => (
@@ -439,20 +884,23 @@ function DocumentDemo() {
                 type="button"
                 aria-label={item.name}
                 aria-pressed={color === item.value}
-                onClick={() => setColor(item.value)}
+                onClick={() => pickColor(item.value)}
                 style={{ backgroundColor: item.value }}
-                className={`h-7 w-7 rounded-full border-2 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
-                  color === item.value
-                    ? "scale-110 border-white"
-                    : "border-white/25 hover:scale-105"
+                className={`nb-focus h-8 w-8 rounded-full border-[3px] border-white transition-transform hover:-rotate-12 hover:scale-125 ${
+                  color === item.value ? "scale-125 shadow-[3px_3px_0_0_#011B43]" : ""
                 }`}
               />
             ))}
           </div>
         </div>
-        <div className="flex gap-1.5 text-xs font-semibold text-white/80">
-          {["PDF", "DOCX", "PNG"].map((format) => (
-            <span key={format} className="rounded-full border border-white/20 px-3 py-1">
+        <div className="flex gap-2 text-xs font-extrabold">
+          {["PDF", "DOCX", "PNG"].map((format, index) => (
+            <span
+              key={format}
+              className={`border-[3px] border-[#011B43] bg-white px-2.5 py-1 ${
+                index === 1 ? "rotate-2" : "-rotate-2"
+              }`}
+            >
               {format}
             </span>
           ))}
@@ -478,7 +926,7 @@ function SamplePaper({ sample, color }: { sample: (typeof samples)[number]; colo
         <div className="flex items-start justify-between gap-[1em]">
           <div className="flex items-center gap-[0.9em]">
             <span
-              className="landing-display flex h-[2.6em] w-[2.6em] items-center justify-center rounded-full text-[1.3em] font-semibold text-white transition-colors duration-300"
+              className="flex h-[2.6em] w-[2.6em] items-center justify-center rounded-full text-[1.3em] font-extrabold text-white transition-colors duration-300"
               style={{ backgroundColor: color }}
             >
               B
@@ -493,7 +941,7 @@ function SamplePaper({ sample, color }: { sample: (typeof samples)[number]; colo
           {!isLetter && (
             <div className="text-right">
               <p
-                className="text-[1.3em] font-bold tracking-[0.08em] transition-colors duration-300"
+                className="text-[1.3em] font-extrabold tracking-[0.08em] transition-colors duration-300"
                 style={{ color }}
               >
                 {sample.label}
@@ -592,7 +1040,7 @@ function SamplePaper({ sample, color }: { sample: (typeof samples)[number]; colo
                   <span className="tabular-nums">{money(tax)}</span>
                 </div>
                 <div
-                  className="mt-[0.4em] flex justify-between border-t-2 pt-[0.5em] text-[1.15em] font-bold transition-colors duration-300"
+                  className="mt-[0.4em] flex justify-between border-t-2 pt-[0.5em] text-[1.15em] font-extrabold transition-colors duration-300"
                   style={{ borderColor: color, color }}
                 >
                   <span>Total KES</span>
@@ -609,12 +1057,15 @@ function SamplePaper({ sample, color }: { sample: (typeof samples)[number]; colo
                 </p>
               </div>
               {sample.id === "receipt" ? (
-                <span
-                  className="-rotate-6 rounded-[0.3em] border-2 px-[0.8em] py-[0.3em] text-[1.05em] font-bold uppercase tracking-[0.14em] transition-colors duration-300"
+                <motion.span
+                  initial={{ scale: 3.2, rotate: -40, opacity: 0 }}
+                  animate={{ scale: 1, rotate: -8, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 420, damping: 13, delay: 0.35 }}
+                  className="rounded-[0.3em] border-[0.22em] px-[0.8em] py-[0.25em] text-[1.5em] font-extrabold uppercase tracking-[0.14em]"
                   style={{ borderColor: color, color }}
                 >
                   Paid
-                </span>
+                </motion.span>
               ) : (
                 <MiniQr />
               )}
@@ -629,13 +1080,15 @@ function SamplePaper({ sample, color }: { sample: (typeof samples)[number]; colo
 function Signature({ color }: { color: string }) {
   return (
     <svg viewBox="0 0 120 40" className="my-[0.4em] h-[3em] w-[9em]" fill="none" aria-hidden>
-      <path
+      <motion.path
         d="M4 30c8-14 14-24 18-22 5 3-8 26-2 26 6 0 10-18 16-18 4 0-2 14 3 14 6 0 8-12 13-12 4 0 0 10 5 10 7 0 12-9 20-11 10-2 22 3 38-6"
         stroke={color}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="transition-colors duration-300"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.9, delay: 0.3, ease: "easeInOut" }}
       />
     </svg>
   );
@@ -669,63 +1122,204 @@ function MiniQr() {
   );
 }
 
-function SectionIntro({
+/* --------------------------------- Sections --------------------------------- */
+
+function SectionTitle({
   eyebrow,
   title,
-  body,
-  dark = false,
+  note,
+  stickerColor = YELLOW,
 }: {
   eyebrow: string;
-  title: string;
-  body?: string;
-  dark?: boolean;
+  title: ReactNode;
+  note?: string;
+  stickerColor?: string;
 }) {
   return (
-    <div className="max-w-2xl">
-      <p
-        className={`text-sm font-semibold uppercase tracking-[0.18em] ${dark ? "text-[#8EC5FF]" : "text-[#0067EC]"}`}
-      >
+    <div className="max-w-3xl">
+      <Sticker color={stickerColor} className="-rotate-2">
         {eyebrow}
-      </p>
-      <h2 className="landing-display mt-4 text-4xl font-medium leading-[1.08] tracking-[-0.015em] sm:text-5xl">
+      </Sticker>
+      <h2 className="mt-5 text-[clamp(2.2rem,6vw,4rem)] font-extrabold leading-[0.98] tracking-[-0.03em]">
         {title}
       </h2>
-      {body && (
-        <p className={`mt-5 text-lg leading-8 ${dark ? "text-white/70" : "text-[#011B43]/70"}`}>
-          {body}
-        </p>
-      )}
+      {note && <p className="landing-hand mt-4 text-3xl leading-tight">{note}</p>}
     </div>
   );
 }
 
 function DocumentsSection() {
   return (
-    <section
-      id="documents"
-      className="scroll-mt-16 border-t border-[#011B43]/10 px-5 py-20 sm:px-8 lg:py-28"
-    >
-      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
-        <SectionIntro
+    <section id="documents" className="scroll-mt-20 px-5 py-20 sm:px-8 lg:py-28">
+      <div className="mx-auto max-w-7xl">
+        <SectionTitle
           eyebrow="What you can make"
           title="The five documents every business sends."
-          body="Each one starts from a template that already carries your logo, colours and contact details."
+          note="each one already wearing your logo ↓"
         />
-        <ul className="border-t border-[#011B43]/15">
+        <ul className="mt-14 grid gap-7 sm:grid-cols-2 lg:grid-cols-6">
           {documentTypes.map((item, index) => (
-            <li
+            <motion.li
               key={item.name}
-              className="group grid grid-cols-[2.5rem_1fr] gap-x-4 border-b border-[#011B43]/15 py-6 sm:grid-cols-[3rem_14rem_1fr] sm:items-baseline"
+              initial={{ rotate: item.tilt * 3, y: 30 }}
+              whileInView={{ rotate: item.tilt, y: 0 }}
+              whileHover={{ rotate: -item.tilt, y: -10, scale: 1.03 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ type: "spring", stiffness: 260, damping: 14 }}
+              style={{ backgroundColor: item.color }}
+              className={`nb-box relative p-6 ${index < 3 ? "lg:col-span-2" : "lg:col-span-3"}`}
             >
-              <span className="pt-1.5 text-sm font-semibold tabular-nums text-[#011B43]/40 sm:pt-0">
-                0{index + 1}
+              <span className="absolute -right-3 -top-4 flex h-11 w-11 rotate-6 items-center justify-center rounded-full border-[3px] border-[#011B43] bg-white text-lg font-extrabold">
+                {index + 1}
               </span>
-              <h3 className="landing-display text-2xl font-medium sm:text-[1.75rem]">
-                {item.name}
+              <span className="nb-wiggle flex h-14 w-14 items-center justify-center border-[3px] border-[#011B43] bg-white">
+                <item.icon className="h-7 w-7" strokeWidth={2.25} />
+              </span>
+              <h3 className="mt-5 text-3xl font-extrabold tracking-tight">{item.name}</h3>
+              <p className="landing-hand mt-1 text-2xl leading-tight">{item.quip}</p>
+              <p className="mt-3 font-medium leading-7">{item.body}</p>
+            </motion.li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+function StepDoodle({ index }: { index: number }) {
+  if (index === 0) {
+    return (
+      <motion.div
+        animate={{ rotate: [0, -14, 10, -14, 0], x: [0, 5, -5, 5, 0] }}
+        transition={{ duration: 1.3, repeat: Infinity, repeatDelay: 0.9 }}
+        className="origin-bottom-left"
+      >
+        <PenLine className="h-12 w-12" strokeWidth={2.25} />
+      </motion.div>
+    );
+  }
+  if (index === 1) {
+    return (
+      <div className="flex items-end gap-1.5">
+        {[BLUE, YELLOW, "#FFFFFF"].map((color, dot) => (
+          <motion.span
+            key={color}
+            animate={{ y: [0, -16, 0] }}
+            transition={{ duration: 0.7, repeat: Infinity, repeatDelay: 0.9, delay: dot * 0.15 }}
+            style={{ backgroundColor: color }}
+            className="h-7 w-7 rounded-full border-[3px] border-[#011B43]"
+          />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <motion.div
+      animate={{
+        x: [0, 70, 70, 0],
+        y: [0, -44, -44, 0],
+        opacity: [1, 0, 0, 1],
+        rotate: [0, -8, -8, 0],
+      }}
+      transition={{ duration: 2.2, repeat: Infinity, times: [0, 0.45, 0.55, 1], ease: "easeIn" }}
+    >
+      <Send className="h-12 w-12" strokeWidth={2.25} />
+    </motion.div>
+  );
+}
+
+function StepsSection() {
+  return (
+    <section
+      id="how-it-works"
+      className="scroll-mt-20 border-y-[3px] border-[#011B43] bg-[#9CC8FF] px-5 py-20 sm:px-8 lg:py-28"
+    >
+      <div className="mx-auto max-w-7xl">
+        <SectionTitle
+          eyebrow="How it works"
+          stickerColor="#FFFFFF"
+          title="From blank page to sent, in three steps."
+        />
+        <ol className="mt-16 grid gap-12 md:grid-cols-3 md:gap-8">
+          {steps.map((step, index) => (
+            <motion.li
+              key={step.word}
+              initial={{ y: 40, rotate: index === 1 ? 3 : -3 }}
+              whileInView={{ y: 0, rotate: index === 1 ? 1.5 : -1.5 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ type: "spring", stiffness: 220, damping: 13, delay: index * 0.1 }}
+              style={{ backgroundColor: step.color }}
+              className="nb-box-lg relative p-7 pt-12"
+            >
+              <span className="absolute -left-[3px] -top-[3px] bg-[#011B43] px-3 py-1.5 text-sm font-extrabold uppercase tracking-widest text-white">
+                Step {index + 1}
+              </span>
+              <div className="absolute right-6 top-5" aria-hidden>
+                <StepDoodle index={index} />
+              </div>
+              <h3 className="mt-8 text-5xl font-extrabold tracking-[-0.03em] lg:text-6xl">
+                {step.word}.
               </h3>
-              <p className="col-start-2 mt-1.5 leading-7 text-[#011B43]/70 sm:col-start-3 sm:mt-0">
-                {item.body}
-              </p>
+              <p className="mt-5 text-lg font-medium leading-8">{step.body}</p>
+            </motion.li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+function BadHabitsSection({ primaryHref }: { primaryHref: string }) {
+  return (
+    <section className="bg-[#011B43] px-5 py-20 text-white sm:px-8 lg:py-28">
+      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:gap-16">
+        <div>
+          <Sticker color={PINK} className="-rotate-2 text-[#011B43]">
+            Retire these
+          </Sticker>
+          <h2 className="mt-5 text-[clamp(2.2rem,6vw,4rem)] font-extrabold leading-[0.98] tracking-[-0.03em]">
+            Things you can{" "}
+            <span className="inline-block -rotate-2 bg-[#FFD43B] px-2 text-[#011B43]">stop</span>{" "}
+            doing.
+          </h2>
+          <p className="landing-hand mt-5 text-3xl leading-tight text-[#FFD43B]">
+            we've all done at least two of these
+          </p>
+          <Link
+            to={primaryHref}
+            className="nb-btn mt-9 inline-flex h-14 items-center gap-3 bg-[#FFD43B] px-7 text-lg font-extrabold text-[#011B43] [--nb-ink:#ffffff]"
+          >
+            Do it the easy way
+            <ArrowRight className="h-5 w-5" strokeWidth={3} />
+          </Link>
+        </div>
+        <ul className="space-y-5">
+          {badHabits.map((habit, index) => (
+            <li
+              key={habit}
+              className={`relative border-[3px] border-white bg-white/5 px-5 py-4 text-xl font-bold sm:text-2xl ${
+                index % 2 === 0 ? "-rotate-1" : "rotate-1"
+              }`}
+            >
+              {habit}
+              <svg
+                viewBox="0 0 400 60"
+                preserveAspectRatio="none"
+                fill="none"
+                aria-hidden
+                className="pointer-events-none absolute inset-0 h-full w-full"
+              >
+                <motion.path
+                  d="M6 50C70 46 96 30 150 34s96-6 150-12 60-6 94-14"
+                  stroke={PINK}
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  initial={{ pathLength: 0 }}
+                  whileInView={{ pathLength: 1 }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ duration: 0.5, delay: 0.25 + index * 0.25, ease: "easeOut" }}
+                />
+              </svg>
             </li>
           ))}
         </ul>
@@ -734,60 +1328,40 @@ function DocumentsSection() {
   );
 }
 
-function StepsSection() {
-  return (
-    <section
-      id="how-it-works"
-      className="scroll-mt-16 bg-[#011B43] px-5 py-20 text-white sm:px-8 lg:py-28"
-    >
-      <div className="mx-auto max-w-7xl">
-        <SectionIntro
-          dark
-          eyebrow="How it works"
-          title="From blank page to sent, in three steps."
-        />
-        <ol className="mt-14 grid gap-10 md:grid-cols-3 md:gap-0">
-          {steps.map((step, index) => (
-            <li
-              key={step.word}
-              className="border-t border-white/20 pt-7 md:border-l md:border-t-0 md:px-8 md:pt-0 md:first:border-l-0 md:first:pl-0"
-            >
-              <span className="text-sm font-semibold tabular-nums text-[#8EC5FF]">
-                Step {index + 1}
-              </span>
-              <h3 className="landing-display mt-3 text-5xl font-normal italic sm:text-6xl">
-                {step.word}.
-              </h3>
-              <p className="mt-5 max-w-sm leading-7 text-white/70">{step.body}</p>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
-
 function FeaturesSection() {
   return (
-    <section id="features" className="scroll-mt-16 px-5 py-20 sm:px-8 lg:py-28">
+    <section id="features" className="nb-dots scroll-mt-20 px-5 py-20 sm:px-8 lg:py-28">
       <div className="mx-auto max-w-7xl">
-        <SectionIntro
+        <SectionTitle
           eyebrow="Features"
+          stickerColor={MINT}
           title="Everything a document needs before it leaves."
-          body="No design software, no copying last month's file and hoping you changed every number."
+          note="no design software required. promise."
         />
-        <div className="mt-14 grid gap-x-12 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <div key={feature.title} className="border-t border-[#011B43]/15 pt-6">
-              <feature.icon className="h-6 w-6 text-[#0067EC]" strokeWidth={1.75} />
-              <h3 className="mt-5 text-xl font-bold">{feature.title}</h3>
-              <p className="mt-2.5 leading-7 text-[#011B43]/70">{feature.body}</p>
-            </div>
+        <div className="mt-14 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature, index) => (
+            <motion.div
+              key={feature.title}
+              whileHover={{ y: -8, rotate: index % 2 === 0 ? -1.5 : 1.5 }}
+              transition={{ type: "spring", stiffness: 320, damping: 12 }}
+              className="nb-box group bg-white p-7"
+            >
+              <span
+                style={{ backgroundColor: feature.color }}
+                className="flex h-14 w-14 -rotate-3 items-center justify-center border-[3px] border-[#011B43] transition-transform duration-300 group-hover:rotate-[14deg] group-hover:scale-110"
+              >
+                <feature.icon className="h-7 w-7" strokeWidth={2.25} />
+              </span>
+              <h3 className="mt-5 text-2xl font-extrabold tracking-tight">{feature.title}</h3>
+              <p className="mt-2.5 font-medium leading-7">{feature.body}</p>
+            </motion.div>
           ))}
         </div>
-        <div className="mt-16 flex flex-col gap-5 rounded-[20px] bg-white p-7 sm:flex-row sm:items-center sm:gap-7 sm:p-9">
-          <Stamp className="h-9 w-9 shrink-0 text-[#0067EC]" strokeWidth={1.5} />
-          <p className="landing-display text-2xl font-medium leading-snug sm:text-[1.75rem]">
+        <div className="nb-box-lg mt-14 flex -rotate-1 flex-col gap-4 bg-[#6EE7B7] p-7 sm:flex-row sm:items-center sm:gap-6 sm:p-9">
+          <span className="text-5xl" aria-hidden>
+            🔒
+          </span>
+          <p className="text-2xl font-extrabold leading-snug tracking-tight sm:text-3xl">
             Your documents stay in your account. Nobody else sees one until you send them the link.
           </p>
         </div>
@@ -800,23 +1374,36 @@ function FaqSection() {
   return (
     <section
       id="faq"
-      className="scroll-mt-16 border-t border-[#011B43]/10 bg-white px-5 py-20 sm:px-8 lg:py-28"
+      className="scroll-mt-20 border-t-[3px] border-[#011B43] bg-white px-5 py-20 sm:px-8 lg:py-28"
     >
-      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
-        <SectionIntro eyebrow="FAQ" title="Questions, answered." />
-        <div className="border-t border-[#011B43]/15">
-          {faqs.map(([question, answer]) => (
-            <details key={question} className="group border-b border-[#011B43]/15">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-lg font-semibold [&::-webkit-details-marker]:hidden">
+      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+        <div>
+          <SectionTitle
+            eyebrow="FAQ"
+            stickerColor={SKY}
+            title="Questions, answered."
+            note="go on, poke one →"
+          />
+          <DoodleStar className="mt-8 hidden h-16 w-16 lg:block" color={PINK} spin />
+        </div>
+        <div className="space-y-5">
+          {faqs.map(([question, answer], index) => (
+            <details
+              key={question}
+              className={`nb-box group bg-[#FFF7E3] transition-transform open:bg-[#FFD43B] ${
+                index % 2 === 0 ? "open:-rotate-1" : "open:rotate-1"
+              }`}
+            >
+              <summary className="nb-focus flex cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-lg font-extrabold sm:text-xl [&::-webkit-details-marker]:hidden">
                 {question}
                 <span
                   aria-hidden
-                  className="text-2xl font-normal leading-none text-[#0067EC] transition-transform group-open:rotate-45"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[3px] border-[#011B43] bg-white text-2xl leading-none transition-transform duration-300 group-open:rotate-[135deg]"
                 >
                   +
                 </span>
               </summary>
-              <p className="max-w-2xl pb-6 leading-7 text-[#011B43]/70">{answer}</p>
+              <p className="max-w-2xl px-5 pb-5 text-lg font-medium leading-8">{answer}</p>
             </details>
           ))}
         </div>
@@ -827,26 +1414,37 @@ function FaqSection() {
 
 function FinalCta({ primaryHref, primaryLabel }: { primaryHref: string; primaryLabel: string }) {
   return (
-    <section className="bg-[#0067EC] px-5 py-20 text-white sm:px-8 lg:py-24">
-      <div className="mx-auto flex max-w-7xl flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
-        <h2 className="landing-display max-w-3xl text-[clamp(2.4rem,6vw,4.25rem)] font-medium leading-[1.04] tracking-[-0.02em]">
-          Your next invoice could be out the door <em className="font-normal">in five minutes.</em>
-        </h2>
-        <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
-          <Link
-            to={primaryHref}
-            className="group inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white px-8 text-base font-semibold text-[#011B43] transition-colors hover:bg-[#011B43] hover:text-white"
-          >
-            {primaryLabel}
-            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-          </Link>
-          <a
-            href="mailto:hello@zuridoc.com"
-            className="inline-flex h-14 items-center justify-center gap-2 rounded-full border border-white/40 px-8 text-base font-semibold transition-colors hover:border-white"
-          >
-            Talk to us
-            <ArrowUpRight className="h-5 w-5" />
-          </a>
+    <section className="nb-dots bg-[#FFD43B] px-5 py-20 sm:px-8 lg:py-24">
+      <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[auto_1fr] lg:gap-24">
+        <div className="lg:pl-10">
+          <Mascot />
+          <p className="landing-hand mt-4 text-center text-2xl">(poke me)</p>
+        </div>
+        <div>
+          <h2 className="text-[clamp(2.6rem,7vw,5rem)] font-extrabold leading-[0.97] tracking-[-0.035em]">
+            Your next invoice could be out the door in{" "}
+            <span className="mt-2 inline-block rotate-1 border-[3px] border-[#011B43] bg-white px-3 shadow-[5px_5px_0_0_#011B43]">
+              five minutes.
+            </span>
+          </h2>
+          <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+            <Link
+              to={primaryHref}
+              className="nb-btn group inline-flex h-16 items-center justify-center gap-3 bg-[#0067EC] px-10 text-xl font-extrabold text-white"
+            >
+              {primaryLabel}
+              <ArrowRight
+                className="h-6 w-6 transition-transform group-hover:translate-x-1.5"
+                strokeWidth={3}
+              />
+            </Link>
+            <a
+              href="mailto:hello@zuridoc.com"
+              className="nb-btn inline-flex h-16 items-center justify-center bg-white px-10 text-xl font-extrabold"
+            >
+              Talk to us
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -854,29 +1452,33 @@ function FinalCta({ primaryHref, primaryLabel }: { primaryHref: string; primaryL
 }
 
 function Footer({ primaryHref, primaryLabel }: { primaryHref: string; primaryLabel: string }) {
+  const linkClass = "underline-offset-4 hover:text-[#FFD43B] hover:underline";
   return (
-    <footer className="bg-[#011B43] px-5 py-12 text-white sm:px-8">
+    <footer className="border-t-[3px] border-[#011B43] bg-[#011B43] px-5 py-12 text-white sm:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-8 md:flex-row md:items-center md:justify-between">
-        <div className="inline-flex w-fit rounded-xl bg-white px-3">
+        <div className="inline-flex w-fit -rotate-2 border-[3px] border-white bg-white px-3 shadow-[5px_5px_0_0_#FFD43B]">
           <img src="/logo to use.png" alt="Zuridoc" className="h-14 w-auto object-contain" />
         </div>
-        <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/70" aria-label="Footer">
+        <nav className="flex flex-wrap gap-x-6 gap-y-3 text-[15px] font-bold" aria-label="Footer">
           {navItems.map((item) => (
-            <a key={item.href} href={item.href} className="transition-colors hover:text-white">
+            <a key={item.href} href={item.href} className={linkClass}>
               {item.label}
             </a>
           ))}
-          <Link to={primaryHref} className="transition-colors hover:text-white">
+          <Link to={primaryHref} className={linkClass}>
             {primaryLabel}
           </Link>
-          <Link to="/privacy-policy" className="transition-colors hover:text-white">
+          <Link to="/privacy-policy" className={linkClass}>
             Privacy Policy
           </Link>
-          <Link to="/terms-of-service" className="transition-colors hover:text-white">
+          <Link to="/terms-of-service" className={linkClass}>
             Terms of Service
           </Link>
         </nav>
       </div>
+      <p className="landing-hand mx-auto mt-8 max-w-7xl text-2xl text-white/70">
+        made for people who'd rather be doing the actual work.
+      </p>
     </footer>
   );
 }

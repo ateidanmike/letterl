@@ -173,30 +173,148 @@
     overflow: hidden;
     isolation: isolate;
     background:
-      radial-gradient(60% 60% at 0% 0%, color-mix(in oklab, var(--primary) 18%, transparent), transparent 60%),
-      radial-gradient(50% 50% at 100% 0%, color-mix(in oklab, var(--foreground) 10%, transparent), transparent 60%),
-      radial-gradient(70% 60% at 100% 100%, color-mix(in oklab, var(--accent) 24%, transparent), transparent 65%),
-      radial-gradient(60% 50% at 0% 100%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 60%),
+      radial-gradient(
+        60% 60% at 0% 0%,
+        color-mix(in oklab, var(--primary) 18%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        50% 50% at 100% 0%,
+        color-mix(in oklab, var(--foreground) 10%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        70% 60% at 100% 100%,
+        color-mix(in oklab, var(--accent) 24%, transparent),
+        transparent 65%
+      ),
+      radial-gradient(
+        60% 50% at 0% 100%,
+        color-mix(in oklab, var(--primary) 14%, transparent),
+        transparent 60%
+      ),
       var(--background);
   }
   .ambient-bg::before {
     content: "";
-    position: absolute; inset: 0; z-index: -1;
+    position: absolute;
+    inset: 0;
+    z-index: -1;
     background-image:
-      linear-gradient(to right, color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px);
+      linear-gradient(
+        to right,
+        color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
+        transparent 1px
+      );
     background-size: 42px 42px;
     mask-image: radial-gradient(ellipse at center, black 40%, transparent 75%);
   }
 }
 
-/* ---------- Landing page typography ---------- */
+/* ---------- Landing page (neo-brutalist) ---------- */
 @layer components {
   .landing {
-    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  }
-  .landing-display {
-    font-family: "Fraunces", ui-serif, Georgia, serif;
+    --nb-ink: #011b43;
+    font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
     font-optical-sizing: auto;
+  }
+  .landing-hand {
+    font-family: "Caveat", "Comic Sans MS", cursive;
+    font-weight: 700;
+  }
+  /* Thick outline with a hard offset shadow. */
+  .nb-box {
+    border: 3px solid var(--nb-ink);
+    box-shadow: 6px 6px 0 0 var(--nb-ink);
+  }
+  .nb-box-lg {
+    border: 3px solid var(--nb-ink);
+    box-shadow: 10px 10px 0 0 var(--nb-ink);
+  }
+  /* Button that physically presses into its shadow. */
+  .nb-btn {
+    border: 3px solid var(--nb-ink);
+    box-shadow: 5px 5px 0 0 var(--nb-ink);
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease,
+      background-color 120ms ease;
+  }
+  .nb-btn:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 3px 3px 0 0 var(--nb-ink);
+  }
+  .nb-btn:active {
+    transform: translate(5px, 5px);
+    box-shadow: 0 0 0 0 var(--nb-ink);
+  }
+  .nb-btn:focus-visible,
+  .nb-focus:focus-visible {
+    outline: 3px solid #ff7aa2;
+    outline-offset: 3px;
+  }
+  /* Uneven corners, like a box drawn by hand. */
+  .nb-scribble {
+    border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px;
+  }
+  .nb-marquee {
+    display: flex;
+    width: max-content;
+    animation: nb-marquee 28s linear infinite;
+  }
+  .nb-marquee-reverse {
+    animation-direction: reverse;
+  }
+  .nb-spin {
+    animation: nb-spin 14s linear infinite;
+  }
+  .nb-wiggle:hover {
+    animation: nb-wiggle 0.45s ease-in-out;
+  }
+  .nb-dots {
+    background-image: radial-gradient(
+      color-mix(in srgb, var(--nb-ink) 16%, transparent) 1.5px,
+      transparent 1.5px
+    );
+    background-size: 22px 22px;
+  }
+}
+
+@keyframes nb-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes nb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes nb-wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(4deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-marquee,
+  .nb-spin,
+  .nb-wiggle:hover {
+    animation: none;
+  }
+  .nb-btn {
+    transition: none;
   }
 }
