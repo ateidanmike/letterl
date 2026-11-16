@@ -182,7 +182,7 @@ function Footer({ doc }: { doc: BusinessDoc }) {
             {qrData && (
               <div style={{ textAlign: "center", color: "#64748b", fontSize: 9 }}>
                 <img src={qrData} alt="QR code" style={{ width: 76, height: 76, display: "block" }} />
-                <div style={{ marginTop: 2 }}>Scan to verify</div>
+                <div style={{ marginTop: 2 }}>Scan for details</div>
               </div>
             )}
           </div>

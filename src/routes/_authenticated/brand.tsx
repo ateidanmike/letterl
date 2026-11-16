@@ -44,16 +44,28 @@ function BrandPage() {
   const [brand, setBrand] = useState<BrandRow>(empty);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadCount, setReloadCount] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
+    setLoading(true);
+    setLoadError(null);
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("brands")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
+      // Never fall through to the empty form on a failed load: saving it would
+      // overwrite the real brand with blanks.
+      if (error) {
+        setLoadError(error.message);
+        setLoading(false);
+        return;
+      }
       if (data) {
         setBrand({
           company_name: data.company_name ?? "",
@@ -73,8 +85,9 @@ function BrandPage() {
           setLogoUrl(signed?.signedUrl ?? null);
         }
       }
+      setLoading(false);
     })();
-  }, [user]);
+  }, [user, reloadCount]);
 
   const upload = async (file: File) => {
     if (!user) return;
@@ -104,7 +117,7 @@ function BrandPage() {
   };
 
   const save = async () => {
-    if (!user) return;
+    if (!user || loading || loadError) return;
     setSaving(true);
     const { error } = await supabase
       .from("brands")
@@ -116,6 +129,28 @@ function BrandPage() {
 
   const set = <K extends keyof BrandRow>(k: K, v: BrandRow[K]) =>
     setBrand((b) => ({ ...b, [k]: v }));
+
+  if (loading) {
+    return <p className="p-10 text-muted-foreground">Loading…</p>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="ambient-bg flex min-h-screen items-start justify-center px-4 py-16">
+        <Card className="w-full max-w-md">
+          <CardContent className="space-y-4 p-6">
+            <h1 className="text-2xl">Couldn't load your brand</h1>
+            <p className="text-sm text-muted-foreground">{loadError}</p>
+            <p className="text-sm text-muted-foreground">
+              Nothing has been changed. Editing is paused so blank details can't be saved over your
+              brand.
+            </p>
+            <Button onClick={() => setReloadCount((count) => count + 1)}>Try again</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="ambient-bg min-h-screen">

@@ -140,6 +140,19 @@ function fromPartyWithDocumentAssets(doc: BusinessDoc) {
   };
 }
 
+/** Resolve once every image in the preview has loaded and, if expected, the QR code exists. */
+async function waitForPreviewReady(node: HTMLElement, expectQr: boolean) {
+  const deadline = Date.now() + 4000;
+  const ready = () => {
+    const images = Array.from(node.querySelectorAll("img"));
+    if (expectQr && !images.some((img) => img.alt === "QR code")) return false;
+    return images.every((img) => img.complete);
+  };
+  while (!ready() && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 60));
+  }
+}
+
 function DocumentsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -157,6 +170,27 @@ function DocumentsPage() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const previewRef = useRef<HTMLDivElement>(null);
+  /** Brand logo link, fetched once and reused for every export from this page. */
+  const logoUrlRef = useRef<Promise<string | null> | null>(null);
+
+  const brandLogoUrl = () => {
+    if (!logoUrlRef.current) {
+      logoUrlRef.current = (async () => {
+        if (!user) return null;
+        const { data: brand } = await supabase
+          .from("brands")
+          .select("logo_path")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (!brand?.logo_path) return null;
+        const { data: signed } = await supabase.storage
+          .from("logos")
+          .createSignedUrl(brand.logo_path, 3600);
+        return signed?.signedUrl ?? null;
+      })();
+    }
+    return logoUrlRef.current;
+  };
 
   const load = async () => {
     const { data, error } = await supabase
@@ -180,8 +214,13 @@ function DocumentsPage() {
 
   useEffect(() => {
     if (!downloadDoc || !previewRef.current) return;
+    const node = previewRef.current;
     const filename = `${downloadDoc.title || "document"}.pdf`;
-    exportPdf(previewRef.current, filename)
+    const expectQr = Boolean(downloadDoc.show_qr && downloadDoc.qr_text?.trim());
+    // The hidden preview has only just mounted: wait for its logo, stamp and QR
+    // code to finish rendering, or the PDF is captured without them.
+    waitForPreviewReady(node, expectQr)
+      .then(() => exportPdf(node, filename))
       .then(() => toast.success("PDF downloaded"))
       .catch((error) => toast.error(error instanceof Error ? error.message : "PDF export failed"))
       .finally(() => {
@@ -220,7 +259,9 @@ function DocumentsPage() {
       toast.error(error.message);
       return null;
     }
-    return normalizeDocument(data as unknown as Record<string, unknown>);
+    const doc = normalizeDocument(data as unknown as Record<string, unknown>);
+    // Same logo the editor shows, so list exports match editor exports.
+    return { ...doc, logo_url: doc.logo_url ?? (await brandLogoUrl()) };
   };
 
   const selectedRows = useMemo(
