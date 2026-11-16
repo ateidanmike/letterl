@@ -125,6 +125,20 @@ describe("exportDocx", () => {
     expect((await parts()).header).toContain(">Acme Ltd<");
   });
 
+  it("embeds the drawn signature, even without a typed name", async () => {
+    const dataUrl = `data:image/png;base64,${btoa(String.fromCharCode(...PNG))}`;
+    await exportDocx(
+      brand,
+      { ...letter, signature_name: "", signature_title: "", signature_data: dataUrl },
+      "offer",
+    );
+    const { body, files } = await parts();
+
+    expect(body).toContain("Sincerely,");
+    expect(body).toContain("<w:drawing>");
+    expect(files.some((f) => f.startsWith("word/media/"))).toBe(true);
+  });
+
   it("leaves out the signature block when no signer is given", async () => {
     await exportDocx(brand, { ...letter, signature_name: "", signature_title: "" }, "offer");
     expect((await parts()).body).not.toContain("Sincerely,");

@@ -26,6 +26,34 @@ function detectImageType(url: string): "png" | "jpg" {
   return /\.jpe?g($|\?)/i.test(url) ? "jpg" : "png";
 }
 
+/** Decode a PNG or JPEG data URL, with its pixel size, for embedding. */
+function signatureImage(dataUrl: string | null | undefined) {
+  const match = /^data:image\/(png|jpeg);base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl ?? "");
+  if (!match) return null;
+  try {
+    const data = Uint8Array.from(atob(match[2]), (c) => c.charCodeAt(0));
+    const view = new DataView(data.buffer);
+    let width = 0;
+    let height = 0;
+    if (match[1] === "png" && data.length > 24) {
+      width = view.getUint32(16);
+      height = view.getUint32(20);
+    }
+    // Fit a 60px-tall line, like the on-screen letter; fall back to a common shape.
+    const ratio = width && height ? width / height : 3.5;
+    const h = 60;
+    const w = Math.min(260, Math.round(h * ratio));
+    return {
+      type: match[1] === "png" ? ("png" as const) : ("jpg" as const),
+      data,
+      width: w,
+      height: Math.round(w / ratio),
+    };
+  } catch {
+    return null;
+  }
+}
+
 function bodyParagraphs(letter: Letterhead): Paragraph[] {
   const sizeHp = letter.font_size * 2; // half-points
   const font = letter.font_family;
@@ -65,9 +93,7 @@ function bodyParagraphs(letter: Letterhead): Paragraph[] {
     out.push(
       new Paragraph({
         spacing: { after: 240 },
-        children: [
-          new TextRun({ text: `Re: ${letter.subject}`, bold: true, font, size: sizeHp }),
-        ],
+        children: [new TextRun({ text: `Re: ${letter.subject}`, bold: true, font, size: sizeHp })],
       }),
     );
   }
@@ -81,21 +107,35 @@ function bodyParagraphs(letter: Letterhead): Paragraph[] {
     );
   });
 
-  if (letter.signature_name || letter.signature_title) {
+  const signature = signatureImage(letter.signature_data);
+  if (letter.signature_name || letter.signature_title || signature) {
     out.push(new Paragraph({ children: [new TextRun(" ")] }));
     out.push(
       new Paragraph({
         children: [new TextRun({ text: "Sincerely,", font, size: sizeHp })],
       }),
     );
-    out.push(new Paragraph({ children: [new TextRun(" ")] }));
-    out.push(new Paragraph({ children: [new TextRun(" ")] }));
-    if (letter.signature_name)
+    if (signature) {
       out.push(
         new Paragraph({
           children: [
-            new TextRun({ text: letter.signature_name, bold: true, font, size: sizeHp }),
+            new ImageRun({
+              type: signature.type,
+              data: signature.data,
+              transformation: { width: signature.width, height: signature.height },
+              altText: { title: "Signature", description: "Signature", name: "signature" },
+            }),
           ],
+        }),
+      );
+    } else {
+      out.push(new Paragraph({ children: [new TextRun(" ")] }));
+      out.push(new Paragraph({ children: [new TextRun(" ")] }));
+    }
+    if (letter.signature_name)
+      out.push(
+        new Paragraph({
+          children: [new TextRun({ text: letter.signature_name, bold: true, font, size: sizeHp })],
         }),
       );
     if (letter.signature_title)
@@ -157,9 +197,7 @@ export async function exportDocx(brand: Brand, letter: Letterhead, filename: str
     }),
   );
 
-  const footerLine = [brand.phone, brand.email, brand.website]
-    .filter(Boolean)
-    .join("   |   ");
+  const footerLine = [brand.phone, brand.email, brand.website].filter(Boolean).join("   |   ");
   const footerChildren: Paragraph[] = [
     new Paragraph({
       border: {

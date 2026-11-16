@@ -194,7 +194,9 @@ function Footer({ doc }: { doc: BusinessDoc }) {
                 style={{ maxHeight: 72, maxWidth: 150, objectFit: "contain", display: "inline-block", marginRight: 8 }}
               />
             )}
-            {doc.signature_data && <img src={doc.signature_data} alt="signature" style={{ height: 40, display: "inline-block" }} />}
+            {doc.signature_data && (
+              <img src={doc.signature_data} alt="signature" style={{ height: 44, maxWidth: 200, objectFit: "contain", objectPosition: "right bottom", display: "inline-block" }} />
+            )}
             {(doc.signature_name || doc.signature_title || doc.signature_data) && (
               <div style={{ borderTop: "1px solid #94a3b8", display: "inline-block", paddingTop: 4, marginTop: 4, minWidth: 180 }}>
                 <div style={{ fontWeight: 700 }}>{doc.signature_name}</div>
