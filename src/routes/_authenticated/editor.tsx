@@ -134,8 +134,9 @@ function Editor() {
           signature_title: letterRow.signature_title ?? "",
           signature_data: (letterRow as { signature_data?: string | null }).signature_data ?? null,
           folder: (letterRow as { folder?: string }).folder ?? "Inbox",
-          page_format: ((letterRow as { page_format?: PageFormat }).page_format ?? "a4"),
-          page_orientation: ((letterRow as { page_orientation?: PageOrientation }).page_orientation ?? "portrait"),
+          page_format: (letterRow as { page_format?: PageFormat }).page_format ?? "a4",
+          page_orientation:
+            (letterRow as { page_orientation?: PageOrientation }).page_orientation ?? "portrait",
           margin_mm: (letterRow as { margin_mm?: number }).margin_mm ?? 18,
           show_qr: (letterRow as { show_qr?: boolean }).show_qr ?? false,
           brand_id: (letterRow as { brand_id?: string | null }).brand_id ?? null,
@@ -291,283 +292,325 @@ function Editor() {
 
   return (
     <div className="ambient-bg min-h-screen overflow-x-hidden">
-    <div className="mx-auto grid w-full max-w-7xl gap-4 px-3 py-4 sm:gap-5 sm:px-6 sm:py-8 lg:grid-cols-[minmax(320px,420px)_1fr]">
-      {/* Controls */}
-      <div className="min-w-0 space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back
-          </Button>
-          <div className="grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2 sm:flex">
-            <Button size="sm" onClick={save} disabled={saving} className="min-w-0">
-              <Save className="mr-2 h-4 w-4 shrink-0" /> <span className="truncate">{saving ? "Saving…" : "Save"}</span>
+      <div className="mx-auto grid w-full max-w-7xl gap-4 px-3 py-4 sm:gap-5 sm:px-6 sm:py-8 lg:grid-cols-[minmax(320px,420px)_1fr]">
+        {/* Controls */}
+        <div className="min-w-0 space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="default" className="min-w-0">
-                  <Download className="mr-2 h-4 w-4 shrink-0" /> <span className="truncate">Export</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={downloadPdf}>Download PDF</DropdownMenuItem>
-                <DropdownMenuItem onClick={downloadDocx}>Download DOCX</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => downloadPng("image/png")}>Download PNG</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => downloadPng("image/jpeg")}>Download JPG</DropdownMenuItem>
-                <DropdownMenuItem onClick={downloadHtml}>Download HTML email</DropdownMenuItem>
-                <DropdownMenuItem onClick={saveAsTemplate}>
-                  <BookmarkPlus className="mr-2 h-4 w-4" /> Save as template
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2 sm:flex">
+              <Button size="sm" onClick={save} disabled={saving} className="min-w-0">
+                <Save className="mr-2 h-4 w-4 shrink-0" />{" "}
+                <span className="truncate">{saving ? "Saving…" : "Save"}</span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="default" className="min-w-0">
+                    <Download className="mr-2 h-4 w-4 shrink-0" />{" "}
+                    <span className="truncate">Export</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={downloadPdf}>Download PDF</DropdownMenuItem>
+                  <DropdownMenuItem onClick={downloadDocx}>Download DOCX</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => downloadPng("image/png")}>
+                    Download PNG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => downloadPng("image/jpeg")}>
+                    Download JPG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={downloadHtml}>Download HTML email</DropdownMenuItem>
+                  <DropdownMenuItem onClick={saveAsTemplate}>
+                    <BookmarkPlus className="mr-2 h-4 w-4" /> Save as template
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </div>
 
-        <Input
-          value={letter.title}
-          onChange={(e) => set("title", e.target.value)}
-          placeholder="Letterhead title"
-          className="text-base font-semibold"
-        />
-
-        <Section title="AI assistant">
-          <AiPanel
-            body={letter.body}
-            onApplyBody={(text) => { setPreviousBody(letter.body); set("body", text); }}
-            onSubject={(s) => set("subject", s)}
+          <Input
+            value={letter.title}
+            onChange={(e) => set("title", e.target.value)}
+            placeholder="Letterhead title"
+            className="text-base font-semibold"
           />
-        </Section>
 
-        <Section title="Themes">
-          <div className="flex flex-wrap gap-2">
-            {THEME_PRESETS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => applyTheme(t.id)}
-                className="rounded-full border px-3 py-1 text-xs hover:border-foreground/40"
-                style={{ borderColor: t.primary_color, color: t.primary_color }}
-              >
-                {t.name}
-              </button>
-            ))}
-          </div>
-        </Section>
+          <Section title="AI assistant">
+            <AiPanel
+              body={letter.body}
+              onApplyBody={(text) => {
+                setPreviousBody(letter.body);
+                set("body", text);
+              }}
+              onSubject={(s) => set("subject", s)}
+            />
+          </Section>
 
-        <Section title="Template">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {TEMPLATES.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => set("template", t.id)}
-                className={`rounded-md border p-3 text-left text-xs transition ${
-                  letter.template === t.id
-                    ? "border-primary bg-primary/5 ring-1 ring-primary"
-                    : "hover:border-foreground/30"
-                }`}
-              >
-                <div className="font-semibold">{t.name}</div>
-                <div className="text-muted-foreground">{t.description}</div>
-              </button>
-            ))}
-          </div>
-        </Section>
-
-        <Section title="Page setup">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div>
-              <Label className="text-xs">Format</Label>
-              <Select value={letter.page_format ?? "a4"} onValueChange={(v) => set("page_format", v as PageFormat)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PAGE_FORMATS.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <Section title="Themes">
+            <div className="flex flex-wrap gap-2">
+              {THEME_PRESETS.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => applyTheme(t.id)}
+                  className="border-2 border-[var(--nb-ink)] bg-card px-3 py-1 text-xs font-bold transition-transform hover:-rotate-2 hover:bg-accent hover:text-accent-foreground"
+                  style={{ borderColor: t.primary_color, color: t.primary_color }}
+                >
+                  {t.name}
+                </button>
+              ))}
             </div>
-            <div>
-              <Label className="text-xs">Orientation</Label>
-              <Select value={letter.page_orientation ?? "portrait"} onValueChange={(v) => set("page_orientation", v as PageOrientation)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="portrait">Portrait</SelectItem>
-                  <SelectItem value="landscape">Landscape</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="sm:col-span-2">
-              <Label className="text-xs">Margin: {letter.margin_mm ?? 18} mm</Label>
-              <Slider min={0} max={40} step={1} value={[letter.margin_mm ?? 18]} onValueChange={(v) => set("margin_mm", v[0])} />
-            </div>
-            <label className="flex items-center gap-2 text-xs sm:col-span-2">
-              <input
-                type="checkbox"
-                checked={!!letter.show_qr}
-                onChange={(e) => set("show_qr", e.target.checked)}
-              />
-              Show QR code linking to share URL
-            </label>
-          </div>
-        </Section>
+          </Section>
 
-        <Section title="Share link">
-          <div className="space-y-2">
+          <Section title="Template">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => set("template", t.id)}
+                  className={`rounded-md border p-3 text-left text-xs transition ${
+                    letter.template === t.id
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "hover:border-foreground/30"
+                  }`}
+                >
+                  <div className="font-semibold">{t.name}</div>
+                  <div className="text-muted-foreground">{t.description}</div>
+                </button>
+              ))}
+            </div>
+          </Section>
+
+          <Section title="Page setup">
             <div className="grid gap-2 sm:grid-cols-2">
               <div>
-                <Label className="text-xs">Expires (optional)</Label>
-                <Input type="datetime-local" value={shareExpiry} onChange={(e) => setShareExpiry(e.target.value)} />
+                <Label className="text-xs">Format</Label>
+                <Select
+                  value={letter.page_format ?? "a4"}
+                  onValueChange={(v) => set("page_format", v as PageFormat)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAGE_FORMATS.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <label className="flex items-end gap-2 text-xs">
-                <input type="checkbox" checked={shareAllowDl} onChange={(e) => setShareAllowDl(e.target.checked)} />
-                Allow PDF download
+              <div>
+                <Label className="text-xs">Orientation</Label>
+                <Select
+                  value={letter.page_orientation ?? "portrait"}
+                  onValueChange={(v) => set("page_orientation", v as PageOrientation)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="portrait">Portrait</SelectItem>
+                    <SelectItem value="landscape">Landscape</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="text-xs">Margin: {letter.margin_mm ?? 18} mm</Label>
+                <Slider
+                  min={0}
+                  max={40}
+                  step={1}
+                  value={[letter.margin_mm ?? 18]}
+                  onValueChange={(v) => set("margin_mm", v[0])}
+                />
+              </div>
+              <label className="flex items-center gap-2 text-xs sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={!!letter.show_qr}
+                  onChange={(e) => set("show_qr", e.target.checked)}
+                />
+                Show QR code linking to share URL
               </label>
             </div>
-            <Button size="sm" variant="secondary" onClick={generateShare} className="w-full">
-              <Share2 className="mr-2 h-4 w-4" /> Generate share link
-            </Button>
-            {shareLink && (
-              <Input readOnly value={shareLink} onClick={(e) => (e.target as HTMLInputElement).select()} className="text-xs" />
-            )}
-          </div>
-        </Section>
+          </Section>
 
-        <Section title="Typography">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div>
-              <Label className="text-xs">Font</Label>
-              <Select value={letter.font_family} onValueChange={(v) => set("font_family", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {FONTS.map((f) => (
-                    <SelectItem key={f} value={f} style={{ fontFamily: f }}>
-                      {f}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Size: {letter.font_size}pt</Label>
-              <Slider
-                min={9}
-                max={16}
-                step={1}
-                value={[letter.font_size]}
-                onValueChange={(v) => set("font_size", v[0])}
-              />
-            </div>
-          </div>
-        </Section>
-
-        <Section title="Colors">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <ColorRow label="Primary" value={letter.primary_color} onChange={(v) => set("primary_color", v)} />
-            <ColorRow label="Accent" value={letter.accent_color} onChange={(v) => set("accent_color", v)} />
-          </div>
-        </Section>
-
-        <Section title="Letter">
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Date</Label>
-              <Input
-                type="date"
-                value={letter.letter_date ?? ""}
-                onChange={(e) => set("letter_date", e.target.value || null)}
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Recipient</Label>
-              <Textarea
-                rows={3}
-                value={letter.recipient}
-                onChange={(e) => set("recipient", e.target.value)}
-                placeholder={"Jane Doe\nABC Ltd\nNairobi"}
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Subject</Label>
-              <Input
-                value={letter.subject}
-                onChange={(e) => set("subject", e.target.value)}
-              />
-            </div>
-            <div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <Label className="text-xs">Body</Label>
-                <div className="flex gap-1">
-                  {previousBody !== null && (
-                    <Button size="sm" variant="ghost" onClick={revert}>
-                      <RotateCcw className="mr-1 h-3 w-3" /> Revert
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={cleanText}
-                    disabled={cleaning}
-                  >
-                    <Sparkles className="mr-1 h-3 w-3" />
-                    {cleaning ? "Cleaning…" : "AI clean"}
-                  </Button>
+          <Section title="Share link">
+            <div className="space-y-2">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs">Expires (optional)</Label>
+                  <Input
+                    type="datetime-local"
+                    value={shareExpiry}
+                    onChange={(e) => setShareExpiry(e.target.value)}
+                  />
                 </div>
+                <label className="flex items-end gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={shareAllowDl}
+                    onChange={(e) => setShareAllowDl(e.target.checked)}
+                  />
+                  Allow PDF download
+                </label>
               </div>
-              <Textarea
-                rows={10}
-                value={letter.body}
-                onChange={(e) => set("body", e.target.value)}
-                placeholder="Dear Jane,&#10;&#10;..."
-              />
+              <Button size="sm" variant="secondary" onClick={generateShare} className="w-full">
+                <Share2 className="mr-2 h-4 w-4" /> Generate share link
+              </Button>
+              {shareLink && (
+                <Input
+                  readOnly
+                  value={shareLink}
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                  className="text-xs"
+                />
+              )}
             </div>
+          </Section>
+
+          <Section title="Typography">
             <div className="grid gap-2 sm:grid-cols-2">
               <div>
-                <Label className="text-xs">Signature name</Label>
-                <Input
-                  value={letter.signature_name}
-                  onChange={(e) => set("signature_name", e.target.value)}
-                />
+                <Label className="text-xs">Font</Label>
+                <Select value={letter.font_family} onValueChange={(v) => set("font_family", v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONTS.map((f) => (
+                      <SelectItem key={f} value={f} style={{ fontFamily: f }}>
+                        {f}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label className="text-xs">Title</Label>
-                <Input
-                  value={letter.signature_title}
-                  onChange={(e) => set("signature_title", e.target.value)}
+                <Label className="text-xs">Size: {letter.font_size}pt</Label>
+                <Slider
+                  min={9}
+                  max={16}
+                  step={1}
+                  value={[letter.font_size]}
+                  onValueChange={(v) => set("font_size", v[0])}
                 />
               </div>
             </div>
-          <div className="mt-3">
-            <Label className="text-xs">Signature image</Label>
-            <SignaturePad
-              value={letter.signature_data ?? null}
-              onChange={(v) => set("signature_data", v)}
-            />
-          </div>
-          </div>
-        </Section>
-      </div>
+          </Section>
 
-      {/* Preview */}
-      <div className="min-w-0 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-auto">
-        <Card className="glass border-0">
-          <CardContent className="overflow-auto bg-muted/30 p-3 sm:flex sm:justify-center sm:p-6">
-            <LetterheadPreview
-              key={previewKey}
-              ref={previewRef}
-              brand={brand}
-              letter={letter}
-              scale={previewScale}
-              qrUrl={id ? shareUrl("preview") : null}
-            />
-          </CardContent>
-        </Card>
+          <Section title="Colors">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <ColorRow
+                label="Primary"
+                value={letter.primary_color}
+                onChange={(v) => set("primary_color", v)}
+              />
+              <ColorRow
+                label="Accent"
+                value={letter.accent_color}
+                onChange={(v) => set("accent_color", v)}
+              />
+            </div>
+          </Section>
+
+          <Section title="Letter">
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Date</Label>
+                <Input
+                  type="date"
+                  value={letter.letter_date ?? ""}
+                  onChange={(e) => set("letter_date", e.target.value || null)}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Recipient</Label>
+                <Textarea
+                  rows={3}
+                  value={letter.recipient}
+                  onChange={(e) => set("recipient", e.target.value)}
+                  placeholder={"Jane Doe\nABC Ltd\nNairobi"}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Subject</Label>
+                <Input value={letter.subject} onChange={(e) => set("subject", e.target.value)} />
+              </div>
+              <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <Label className="text-xs">Body</Label>
+                  <div className="flex gap-1">
+                    {previousBody !== null && (
+                      <Button size="sm" variant="ghost" onClick={revert}>
+                        <RotateCcw className="mr-1 h-3 w-3" /> Revert
+                      </Button>
+                    )}
+                    <Button size="sm" variant="secondary" onClick={cleanText} disabled={cleaning}>
+                      <Sparkles className="mr-1 h-3 w-3" />
+                      {cleaning ? "Cleaning…" : "AI clean"}
+                    </Button>
+                  </div>
+                </div>
+                <Textarea
+                  rows={10}
+                  value={letter.body}
+                  onChange={(e) => set("body", e.target.value)}
+                  placeholder="Dear Jane,&#10;&#10;..."
+                />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs">Signature name</Label>
+                  <Input
+                    value={letter.signature_name}
+                    onChange={(e) => set("signature_name", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Title</Label>
+                  <Input
+                    value={letter.signature_title}
+                    onChange={(e) => set("signature_title", e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="mt-3">
+                <Label className="text-xs">Signature image</Label>
+                <SignaturePad
+                  value={letter.signature_data ?? null}
+                  onChange={(v) => set("signature_data", v)}
+                />
+              </div>
+            </div>
+          </Section>
+        </div>
+
+        {/* Preview */}
+        <div className="min-w-0 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-auto">
+          <Card className="glass">
+            <CardContent className="overflow-auto bg-muted/30 p-3 sm:flex sm:justify-center sm:p-6">
+              <LetterheadPreview
+                key={previewKey}
+                ref={previewRef}
+                brand={brand}
+                letter={letter}
+                scale={previewScale}
+                qrUrl={id ? shareUrl("preview") : null}
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
     </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <Card className="glass border-0">
+    <Card className="glass">
       <CardContent className="min-w-0 p-3 sm:p-4">
         <h3 className="mb-3 text-sm font-semibold">{title}</h3>
         {children}

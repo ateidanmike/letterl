@@ -59,29 +59,37 @@ const sections = [
 
 function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#111827]">
-      <header className="bg-[#011B43] px-5 py-5 text-white sm:px-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
-          <Link to="/" className="flex h-12 w-[180px] items-center justify-center rounded-xl bg-white px-4 py-2 shadow-lg">
-            <img src="/logo to use.png" alt="Zuridoc" className="h-8 w-full object-contain object-center" />
+    <div className="landing nb-dots min-h-screen bg-[#FFF7E3] text-[#011B43]">
+      <header className="border-b-[3px] border-[#011B43] bg-[#FFF7E3] px-5 sm:px-8">
+        <div className="mx-auto flex h-[68px] max-w-5xl items-center justify-between gap-4">
+          <Link to="/" className="nb-focus flex items-center">
+            <img src="/logo to use.png" alt="Zuridoc" className="h-14 w-auto object-contain" />
           </Link>
-          <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 transition hover:text-white">
+          <Link
+            to="/"
+            className="nb-focus inline-flex items-center gap-2 text-[15px] font-extrabold underline decoration-[3px] underline-offset-4 hover:decoration-[#FF7AA2]"
+          >
             <ArrowLeft className="h-4 w-4" /> Home
           </Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8 sm:py-14">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70 sm:p-10">
-          <div className="mb-8 flex flex-col gap-4 border-b border-slate-200 pb-8 sm:flex-row sm:items-start sm:justify-between">
+        <div className="nb-box-lg bg-white p-6 sm:p-10">
+          <div className="mb-8 flex flex-col gap-4 border-b-[3px] border-[#011B43] pb-8 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase text-[#0067EC]">Privacy and data transparency</p>
-              <h1 className="mt-3 text-4xl font-semibold tracking-normal text-[#011B43] sm:text-5xl">Privacy Policy</h1>
-              <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                This policy explains how Zuridoc handles personal information when you visit our website or use our document creation services.
+              <p className="nb-scribble inline-block -rotate-2 border-[3px] border-[#011B43] bg-[#FFD43B] px-4 py-1 text-sm font-extrabold uppercase tracking-[0.12em]">
+                Privacy and data transparency
+              </p>
+              <h1 className="mt-5 text-5xl font-extrabold leading-none tracking-[-0.03em] sm:text-6xl">
+                Privacy Policy
+              </h1>
+              <p className="mt-4 max-w-3xl text-lg font-medium leading-8">
+                This policy explains how Zuridoc handles personal information when you visit our
+                website or use our document creation services.
               </p>
             </div>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#EAF4FF] text-[#0067EC]">
+            <div className="flex h-14 w-14 shrink-0 rotate-6 items-center justify-center border-[3px] border-[#011B43] bg-[#6EE7B7] shadow-[4px_4px_0_0_#011B43]">
               <ShieldCheck className="h-6 w-6" />
             </div>
           </div>
@@ -89,8 +97,8 @@ function PrivacyPolicyPage() {
           <div className="space-y-8">
             {sections.map((section) => (
               <section key={section.title}>
-                <h2 className="text-xl font-semibold text-[#011B43]">{section.title}</h2>
-                <p className="mt-3 leading-7 text-slate-600">{section.body}</p>
+                <h2 className="text-2xl font-extrabold tracking-tight">{section.title}</h2>
+                <p className="mt-3 text-[17px] font-medium leading-8">{section.body}</p>
               </section>
             ))}
           </div>

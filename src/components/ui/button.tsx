@@ -5,17 +5,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-sm font-bold transition-[transform,box-shadow,background-color] duration-100 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        default:
+          "bg-primary text-primary-foreground border-2 border-[var(--nb-ink)] shadow-[3px_3px_0_0_var(--nb-ink)] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_0_var(--nb-ink)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
+        destructive:
+          "bg-destructive text-destructive-foreground border-2 border-[var(--nb-ink)] shadow-[3px_3px_0_0_var(--nb-ink)] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_0_var(--nb-ink)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground border-2 border-[var(--nb-ink)] shadow-[3px_3px_0_0_var(--nb-ink)] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_0_var(--nb-ink)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
+        secondary:
+          "bg-secondary text-secondary-foreground border-2 border-[var(--nb-ink)] shadow-[3px_3px_0_0_var(--nb-ink)] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_0_var(--nb-ink)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
+        ghost:
+          "border-2 border-transparent hover:border-[var(--nb-ink)] hover:bg-accent hover:text-accent-foreground",
+        link: "underline decoration-2 underline-offset-4 hover:decoration-[var(--nb-pink)]",
       },
       size: {
         default: "h-9 px-4 py-2",
