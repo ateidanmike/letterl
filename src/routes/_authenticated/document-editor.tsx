@@ -63,7 +63,12 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
   const [previewScale, setPreviewScale] = useState(1);
   const previewRef = useRef<HTMLDivElement>(null);
   const previewShellRef = useRef<HTMLDivElement>(null);
+  const [missing, setMissing] = useState(false);
   const lastAutosavedRef = useRef("");
+  /** updated_at of the server row our edits are based on. */
+  const serverUpdatedAtRef = useRef<string | null>(null);
+  const docRef = useRef(doc);
+  docRef.current = doc;
   const autosaveTimerRef = useRef<number | null>(null);
   const draftKey = id ? `zuridoc:business-document-draft:${id}` : null;
   const availableTemplates = DOC_TEMPLATES.filter((template) =>
@@ -113,28 +118,101 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
     status: currentDoc.status,
   });
 
-  const mergeStoredDraft = (serverDoc: BusinessDoc, serverUpdatedAt?: unknown) => {
+  // ---- Local draft ---------------------------------------------------------
+  // A draft exists in this browser only while there are edits the server has not
+  // confirmed. It records which server version it was based on, so we never rely
+  // on comparing the device clock with the server clock.
+  const writeDraft = (currentDoc: BusinessDoc) => {
+    if (!draftKey) return;
+    // The logo link is short-lived and always re-issued on load; never store it.
+    const { logo_url: _logoUrl, ...draftDoc } = currentDoc;
+    try {
+      window.localStorage.setItem(
+        draftKey,
+        JSON.stringify({ baseUpdatedAt: serverUpdatedAtRef.current, doc: draftDoc }),
+      );
+    } catch {
+      // Storage is full or unavailable (large stamp images can do this). The
+      // server autosave still runs, so carry on without a local copy.
+    }
+  };
+
+  const clearDraft = () => {
+    if (!draftKey) return;
+    try {
+      window.localStorage.removeItem(draftKey);
+    } catch {
+      // ignore
+    }
+  };
+
+  const applyDraft = (serverDoc: BusinessDoc, draftDoc: Partial<BusinessDoc>): BusinessDoc => ({
+    ...serverDoc,
+    ...draftDoc,
+    logo_url: serverDoc.logo_url,
+    qr_text: isPrivateDocumentLink(draftDoc.qr_text)
+      ? serverDoc.qr_text
+      : (draftDoc.qr_text ?? serverDoc.qr_text),
+    from_party: { ...serverDoc.from_party, ...(draftDoc.from_party ?? {}) },
+    to_party: { ...serverDoc.to_party, ...(draftDoc.to_party ?? {}) },
+    items: draftDoc.items?.length ? draftDoc.items : serverDoc.items,
+  });
+
+  const mergeStoredDraft = (serverDoc: BusinessDoc, serverUpdatedAt: string | null) => {
     if (!draftKey) return serverDoc;
     try {
       const stored = window.localStorage.getItem(draftKey);
       if (!stored) return serverDoc;
-      const parsed = JSON.parse(stored) as { updatedAt?: string; doc?: Partial<BusinessDoc> };
-      if (!parsed.doc || !parsed.updatedAt) return serverDoc;
-      const localTime = new Date(parsed.updatedAt).getTime();
-      const serverTime =
-        typeof serverUpdatedAt === "string" ? new Date(serverUpdatedAt).getTime() : 0;
-      if (!Number.isFinite(localTime) || localTime <= serverTime) return serverDoc;
-      toast.success("Restored your latest draft.");
-      return {
-        ...serverDoc,
-        ...parsed.doc,
-        from_party: { ...serverDoc.from_party, ...(parsed.doc.from_party ?? {}) },
-        to_party: { ...serverDoc.to_party, ...(parsed.doc.to_party ?? {}) },
-        items: parsed.doc.items?.length ? parsed.doc.items : serverDoc.items,
+      const parsed = JSON.parse(stored) as {
+        baseUpdatedAt?: string | null;
+        doc?: Partial<BusinessDoc>;
       };
+      if (!parsed.doc) {
+        clearDraft();
+        return serverDoc;
+      }
+      const candidate = applyDraft(serverDoc, parsed.doc);
+      if (JSON.stringify(candidate) === JSON.stringify(serverDoc)) {
+        clearDraft();
+        return serverDoc;
+      }
+      // Based on exactly this server version: these are simply unsynced edits.
+      if ("baseUpdatedAt" in parsed && parsed.baseUpdatedAt === serverUpdatedAt) {
+        toast.success("Restored changes that hadn't finished saving.");
+        return candidate;
+      }
+      // The document changed on the server since this draft was made (or the
+      // draft predates version tracking). Keep the server copy and let the
+      // person decide, instead of silently overwriting newer work.
+      toast.message("This browser has an older unsaved draft of this document.", {
+        description: "The latest saved version is shown.",
+        duration: 20000,
+        action: {
+          label: "Use my draft",
+          onClick: () => setDoc((current) => applyDraft(current, parsed.doc ?? {})),
+        },
+      });
+      clearDraft();
+      return serverDoc;
     } catch {
       return serverDoc;
     }
+  };
+
+  /** Write a snapshot to the server. True only if the row really was updated. */
+  const pushToServer = async (snapshot: BusinessDoc) => {
+    if (!id || missing) return false;
+    const { data, error } = await supabase
+      .from("business_documents")
+      .update(documentPayload(snapshot))
+      .eq("id", id)
+      .select("updated_at");
+    if (error || !data?.length) return false;
+    serverUpdatedAtRef.current = (data[0] as { updated_at: string }).updated_at;
+    lastAutosavedRef.current = JSON.stringify(snapshot);
+    if (JSON.stringify(docRef.current) === lastAutosavedRef.current) clearDraft();
+    else writeDraft(docRef.current);
+    return true;
   };
 
   useEffect(() => {
@@ -145,8 +223,15 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
         .select("*")
         .eq("id", id)
         .single();
-      if (error) toast.error(error.message);
       const raw = data as unknown as Record<string, unknown> | null;
+      if (error || !raw) {
+        // Don't open a blank editor for a document we couldn't load: it would
+        // look editable while nothing could be saved.
+        setMissing(true);
+        setLoaded(true);
+        return;
+      }
+      serverUpdatedAtRef.current = typeof raw.updated_at === "string" ? raw.updated_at : null;
 
       const { data: brand } = await supabase
         .from("brands")
@@ -193,32 +278,34 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
           !rawDoc.accent_color ||
           rawDoc.accent_color === DEFAULT_DOC.accent_color ||
           rawDoc.accent_color.toLowerCase() === "#0ea5e9";
-        const nextDoc = mergeStoredDraft(
-          {
-            ...rawDoc,
-            logo_url: rawDoc.logo_url ?? logoUrl,
-            primary_color: shouldUseBrandPrimary
-              ? (brand?.primary_color ?? rawDoc.primary_color)
-              : rawDoc.primary_color,
-            accent_color: shouldUseBrandAccent
-              ? (brand?.accent_color ?? rawDoc.accent_color)
-              : rawDoc.accent_color,
-            terms: rawDoc.terms || DEFAULT_DOC.terms,
-            qr_text:
-              rawDoc.qr_text ||
-              (id ? `${window.location.origin}/document/${documentSlug(rawDoc)}` : ""),
-            from_party: {
-              ...rawDoc.from_party,
-              name: rawDoc.from_party.name || brandFromParty.name,
-              address: rawDoc.from_party.address || brandFromParty.address,
-              email: rawDoc.from_party.email || brandFromParty.email,
-              phone: rawDoc.from_party.phone || brandFromParty.phone,
-              website: rawDoc.from_party.website || brandFromParty.website,
-            },
+        const preparedDoc: BusinessDoc = {
+          ...rawDoc,
+          logo_url: rawDoc.logo_url ?? logoUrl,
+          primary_color: shouldUseBrandPrimary
+            ? (brand?.primary_color ?? rawDoc.primary_color)
+            : rawDoc.primary_color,
+          accent_color: shouldUseBrandAccent
+            ? (brand?.accent_color ?? rawDoc.accent_color)
+            : rawDoc.accent_color,
+          terms: rawDoc.terms || DEFAULT_DOC.terms,
+          // Older documents defaulted the QR to this app's private editor link,
+          // which a customer can't open. Fall back to the business website.
+          qr_text: isPrivateDocumentLink(rawDoc.qr_text)
+            ? websiteUrl(rawDoc.from_party.website || brandFromParty.website)
+            : rawDoc.qr_text || websiteUrl(rawDoc.from_party.website || brandFromParty.website),
+          from_party: {
+            ...rawDoc.from_party,
+            name: rawDoc.from_party.name || brandFromParty.name,
+            address: rawDoc.from_party.address || brandFromParty.address,
+            email: rawDoc.from_party.email || brandFromParty.email,
+            phone: rawDoc.from_party.phone || brandFromParty.phone,
+            website: rawDoc.from_party.website || brandFromParty.website,
           },
-          raw.updated_at,
-        );
-        lastAutosavedRef.current = JSON.stringify(nextDoc);
+        };
+        const nextDoc = mergeStoredDraft(preparedDoc, serverUpdatedAtRef.current);
+        // Compare future edits against what the server holds, so a restored
+        // draft counts as unsynced and gets pushed.
+        lastAutosavedRef.current = JSON.stringify(preparedDoc);
         setDoc(nextDoc);
       } else if (brand) {
         setDoc((d) => ({
@@ -236,75 +323,58 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
   const save = async ({ quiet = false }: { quiet?: boolean } = {}) => {
     if (!id) return true;
     setSaving(true);
-    const { error } = await supabase
-      .from("business_documents")
-      .update(documentPayload(doc))
-      .eq("id", id);
+    const ok = await pushToServer(doc);
     setSaving(false);
-    if (error) {
-      toast.error(error.message);
+    if (!ok) {
+      setAutosaveStatus("error");
+      toast.error("Couldn't save. Check your connection and try again.");
       return false;
     }
-    const savedAt = new Date();
-    setLastSavedAt(savedAt);
+    setLastSavedAt(new Date());
     setAutosaveStatus("saved");
-    lastAutosavedRef.current = JSON.stringify(doc);
     if (!quiet) toast.success("Saved");
     return true;
   };
 
   useEffect(() => {
-    if (!loaded || !id || !draftKey) return;
+    if (!loaded || missing || !id || !draftKey) return;
 
-    const serialized = JSON.stringify(doc);
-    const updatedAt = new Date().toISOString();
-    window.localStorage.setItem(draftKey, JSON.stringify({ updatedAt, doc }));
-
-    if (serialized === lastAutosavedRef.current) {
+    if (JSON.stringify(doc) === lastAutosavedRef.current) {
       setAutosaveStatus("saved");
       return;
     }
 
+    // Keep a local copy until the server confirms these edits.
+    writeDraft(doc);
     setAutosaveStatus("saving");
     if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
 
     autosaveTimerRef.current = window.setTimeout(async () => {
-      const snapshot = doc;
-      const snapshotJson = JSON.stringify(snapshot);
-      const { error } = await supabase
-        .from("business_documents")
-        .update(documentPayload(snapshot))
-        .eq("id", id);
-      if (error) {
+      const ok = await pushToServer(doc);
+      if (!ok) {
         setAutosaveStatus("error");
         return;
       }
-      lastAutosavedRef.current = snapshotJson;
       setAutosaveStatus("saved");
       setLastSavedAt(new Date());
-      setLastSavedAt(new Date());
-      window.localStorage.setItem(
-        draftKey,
-        JSON.stringify({ updatedAt: new Date().toISOString(), doc: snapshot }),
-      );
     }, 900);
 
     return () => {
       if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
     };
-  }, [doc, draftKey, id, loaded]);
+    // The helpers are recreated each render; only real document changes should restart the timer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc, draftKey, id, loaded, missing]);
 
   useEffect(() => {
-    if (!loaded || !id || !draftKey) return;
+    if (!loaded || missing || !id || !draftKey) return;
 
     const persistDraftBeforeExit = () => {
-      window.localStorage.setItem(
-        draftKey,
-        JSON.stringify({ updatedAt: new Date().toISOString(), doc }),
-      );
       if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
-      if (JSON.stringify(doc) !== lastAutosavedRef.current) {
-        void supabase.from("business_documents").update(documentPayload(doc)).eq("id", id);
+      const current = docRef.current;
+      if (JSON.stringify(current) !== lastAutosavedRef.current) {
+        writeDraft(current);
+        void pushToServer(current);
       }
     };
 
@@ -319,8 +389,12 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
       window.removeEventListener("pagehide", persistDraftBeforeExit);
       window.removeEventListener("beforeunload", persistDraftBeforeExit);
       document.removeEventListener("visibilitychange", saveOnVisibilityChange);
+      // Leaving the editor inside the app (Back, nav links) fires none of the
+      // events above, so flush pending edits here too.
+      persistDraftBeforeExit();
     };
-  }, [doc, draftKey, id, loaded]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey, id, loaded, missing]);
 
   useEffect(() => {
     if (autosaveStatus !== "error") return;
@@ -405,6 +479,26 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
   }, []);
 
   if (!loaded) return <div className="p-10 text-muted-foreground">Loading…</div>;
+
+  if (missing) {
+    return (
+      <div className="ambient-bg flex min-h-screen items-start justify-center px-4 py-16">
+        <div className="glass w-full max-w-md space-y-4 p-6">
+          <h1 className="text-2xl">Couldn't open this document</h1>
+          <p className="text-sm text-muted-foreground">
+            It may have been deleted, or the connection dropped while loading. Nothing has been
+            changed.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={() => window.location.reload()}>Try again</Button>
+            <Button variant="outline" onClick={() => navigate({ to: "/documents" })}>
+              Back to documents
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ambient-bg min-h-screen">
@@ -818,7 +912,8 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
                 <div>
                   <Label className="text-xs">QR code</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Optional QR shown on the document.
+                    Optional. Use a link your customer can open, such as your website or a payment
+                    page.
                   </p>
                 </div>
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -880,6 +975,17 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+/** True for links into this app's sign-in-only document editor. */
+function isPrivateDocumentLink(value: string | null | undefined) {
+  return /^https?:\/\/[^/]+\/document(-editor)?[/?]/i.test((value ?? "").trim());
+}
+
+function websiteUrl(value: string | null | undefined) {
+  const site = (value ?? "").trim();
+  if (!site) return "";
+  return /^https?:\/\//i.test(site) ? site : `https://${site}`;
 }
 
 function DocumentImageUpload({

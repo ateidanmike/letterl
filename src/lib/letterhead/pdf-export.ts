@@ -16,15 +16,15 @@ export async function exportPdf(node: HTMLElement, filename: string, letter?: Le
 export async function exportPdfBlob(node: HTMLElement, letter?: Letterhead): Promise<Blob> {
   const { node: captureNode, cleanup } = await createCaptureNode(node);
 
-  // html2canvas cannot parse `oklch(...)` color values (used by the app's
-  // Tailwind theme tokens). Inject an override stylesheet that forces every
-  // descendant to inherit safe sRGB colors during capture.
+  // html2canvas cannot parse `oklch(...)` colours (used by the app's theme
+  // tokens). The onclone step below swaps any such computed colour for a safe
+  // fallback per element, which leaves the document's own coloured rules and
+  // table borders exactly as they appear on screen. These two properties are not
+  // covered by that step, so neutralise them here.
   const overrideStyle = document.createElement("style");
   overrideStyle.setAttribute("data-pdf-export-override", "true");
   overrideStyle.textContent = `
     #letterhead-page, #letterhead-page * {
-      border-color: #e2e8f0 !important;
-      outline-color: #e2e8f0 !important;
       text-decoration-color: inherit !important;
       caret-color: auto !important;
     }
@@ -171,22 +171,18 @@ async function createCaptureNode(node: HTMLElement) {
 
 async function waitForImages(node: HTMLElement) {
   const images = Array.from(node.querySelectorAll("img"));
-  await Promise.all(images.map((img) => {
-    if (img.complete) return Promise.resolve();
-    return new Promise<void>((resolve) => {
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
-    });
-  }));
+  await Promise.all(
+    images.map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      });
+    }),
+  );
 }
 
-function drawPageNumber(
-  pdf: jsPDF,
-  current: number,
-  total: number,
-  pageW: number,
-  pageH: number,
-) {
+function drawPageNumber(pdf: jsPDF, current: number, total: number, pageW: number, pageH: number) {
   const label = `Page ${current} of ${total}`;
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9);

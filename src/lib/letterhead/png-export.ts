@@ -1,12 +1,17 @@
 import html2canvas from "html2canvas";
 
-export async function exportPng(node: HTMLElement, filename: string, mime: "image/png" | "image/jpeg" = "image/png") {
+export async function exportPng(
+  node: HTMLElement,
+  filename: string,
+  mime: "image/png" | "image/jpeg" = "image/png",
+) {
   const { node: captureNode, cleanup } = await createCaptureNode(node);
 
+  // See pdf-export.ts: borders keep their real colours; onclone handles oklch.
   const overrideStyle = document.createElement("style");
   overrideStyle.textContent = `#letterhead-page, #letterhead-page * {
-    border-color: #e2e8f0 !important;
-    outline-color: #e2e8f0 !important;
+    text-decoration-color: inherit !important;
+    caret-color: auto !important;
   }`;
   document.head.appendChild(overrideStyle);
 
@@ -24,14 +29,25 @@ export async function exportPng(node: HTMLElement, filename: string, mime: "imag
       windowWidth: captureWidth,
       windowHeight: captureHeight,
       onclone: (doc) => {
-        const props = ["color", "backgroundColor", "borderTopColor", "borderRightColor", "borderBottomColor", "borderLeftColor", "outlineColor", "fill", "stroke"];
+        const props = [
+          "color",
+          "backgroundColor",
+          "borderTopColor",
+          "borderRightColor",
+          "borderBottomColor",
+          "borderLeftColor",
+          "outlineColor",
+          "fill",
+          "stroke",
+        ];
         doc.querySelectorAll<HTMLElement>("*").forEach((el) => {
           const cs = doc.defaultView?.getComputedStyle(el);
           if (!cs) return;
           props.forEach((p) => {
             const v = (cs as unknown as Record<string, string>)[p];
             if (v && v.includes("oklch")) {
-              const fb = p === "color" ? "#0f172a" : p === "backgroundColor" ? "transparent" : "#e2e8f0";
+              const fb =
+                p === "color" ? "#0f172a" : p === "backgroundColor" ? "transparent" : "#e2e8f0";
               (el.style as unknown as Record<string, string>)[p] = fb;
             }
           });
@@ -82,11 +98,13 @@ async function createCaptureNode(node: HTMLElement) {
 
 async function waitForImages(node: HTMLElement) {
   const images = Array.from(node.querySelectorAll("img"));
-  await Promise.all(images.map((img) => {
-    if (img.complete) return Promise.resolve();
-    return new Promise<void>((resolve) => {
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
-    });
-  }));
+  await Promise.all(
+    images.map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      });
+    }),
+  );
 }

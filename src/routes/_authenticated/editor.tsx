@@ -81,18 +81,46 @@ function Editor() {
   const [shareExpiry, setShareExpiry] = useState<string>("");
   const [shareAllowDl, setShareAllowDl] = useState(true);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadCount, setReloadCount] = useState(0);
+  const [saveState, setSaveState] = useState<"saved" | "dirty" | "saving" | "error">("saved");
+  /** JSON of the letter as last written to the server; "" for a letter never saved. */
+  const savedSnapshotRef = useRef("");
+
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Load brand + letterhead
+  // Load brand + letterhead. A failed load must never leave a blank form that
+  // could then be saved over the real record, so errors stop the editor.
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
+    setLoaded(false);
+    setLoadError(null);
     (async () => {
-      const [{ data: brandRow }, { data: letterRow }] = await Promise.all([
+      const [brandRes, letterRes] = await Promise.all([
         supabase.from("brands").select("*").eq("user_id", user.id).maybeSingle(),
         id
           ? supabase.from("letterheads").select("*").eq("id", id).maybeSingle()
-          : Promise.resolve({ data: null }),
+          : Promise.resolve({ data: null, error: null }),
       ]);
+      if (cancelled) return;
+
+      if (brandRes.error || letterRes.error) {
+        setLoadError(
+          (brandRes.error ?? letterRes.error)?.message ?? "Could not load this letterhead.",
+        );
+        setLoaded(true);
+        return;
+      }
+      const brandRow = brandRes.data;
+      const letterRow = letterRes.data;
+      if (id && !letterRow) {
+        setLoadError("This letterhead could not be found. It may have been deleted.");
+        setLoaded(true);
+        return;
+      }
+
+      let next: Letterhead = DEFAULT_LETTERHEAD;
       if (brandRow) {
         let logoUrl: string | null = null;
         if (brandRow.logo_path) {
@@ -101,6 +129,7 @@ function Editor() {
             .createSignedUrl(brandRow.logo_path, 3600);
           logoUrl = signed?.signedUrl ?? null;
         }
+        if (cancelled) return;
         setBrand({
           company_name: brandRow.company_name ?? "",
           phone: brandRow.phone ?? "",
@@ -112,14 +141,14 @@ function Editor() {
           accent_color: brandRow.accent_color,
           watermark_text: (brandRow as { watermark_text?: string | null }).watermark_text ?? null,
         });
-        setLetter((l) => ({
-          ...l,
+        next = {
+          ...next,
           primary_color: brandRow.primary_color,
           accent_color: brandRow.accent_color,
-        }));
+        };
       }
       if (letterRow) {
-        setLetter({
+        next = {
           title: letterRow.title,
           template: letterRow.template as TemplateId,
           font_family: letterRow.font_family,
@@ -140,36 +169,120 @@ function Editor() {
           margin_mm: (letterRow as { margin_mm?: number }).margin_mm ?? 18,
           show_qr: (letterRow as { show_qr?: boolean }).show_qr ?? false,
           brand_id: (letterRow as { brand_id?: string | null }).brand_id ?? null,
-        });
+        };
       }
+
+      // The QR code points at this letter's newest working share link, if any.
+      if (id) {
+        const { data: shares } = await supabase
+          .from("letterhead_shares")
+          .select("token,expires_at")
+          .eq("letterhead_id", id)
+          .order("created_at", { ascending: false })
+          .limit(5);
+        if (cancelled) return;
+        const live = (shares ?? []).find(
+          (share) => !share.expires_at || new Date(share.expires_at).getTime() > Date.now(),
+        );
+        setShareLink(live ? shareUrl(live.token) : null);
+      }
+
+      savedSnapshotRef.current = id ? JSON.stringify(next) : "";
+      setLetter(next);
+      setSaveState("saved");
       setLoaded(true);
     })();
-  }, [user, id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user, id, reloadCount]);
 
   const set = <K extends keyof Letterhead>(k: K, v: Letterhead[K]) =>
     setLetter((l) => ({ ...l, [k]: v }));
 
-  const save = async () => {
-    if (!user) return;
-    setSaving(true);
-    const payload = { user_id: user.id, ...letter };
+  /** Write a snapshot to the server. Returns true only if a row was really saved. */
+  const persist = async (snapshot: Letterhead, { quiet = false } = {}) => {
+    if (!user || loadError) return false;
+    setSaveState("saving");
+    const payload = { user_id: user.id, ...snapshot };
     if (id) {
-      const { error } = await supabase.from("letterheads").update(payload).eq("id", id);
-      if (error) toast.error(error.message);
-      else toast.success("Saved");
+      const { data, error } = await supabase
+        .from("letterheads")
+        .update(payload)
+        .eq("id", id)
+        .select("id");
+      if (error || !data?.length) {
+        setSaveState("error");
+        if (!quiet) toast.error(error?.message ?? "This letterhead no longer exists.");
+        return false;
+      }
     } else {
       const { data, error } = await supabase
         .from("letterheads")
         .insert(payload)
         .select("id")
         .single();
-      if (error) toast.error(error.message);
-      else {
-        toast.success("Saved");
-        navigate({ to: "/editor", search: { id: data.id }, replace: true });
+      if (error) {
+        setSaveState("error");
+        if (!quiet) toast.error(error.message);
+        return false;
       }
+      savedSnapshotRef.current = JSON.stringify(snapshot);
+      setSaveState("saved");
+      if (!quiet) toast.success("Saved");
+      navigate({ to: "/editor", search: { id: data.id }, replace: true });
+      return true;
     }
+    savedSnapshotRef.current = JSON.stringify(snapshot);
+    // Only report "saved" if nothing changed while the request was in flight.
+    setSaveState(
+      JSON.stringify(letterRef.current) === savedSnapshotRef.current ? "saved" : "dirty",
+    );
+    if (!quiet) toast.success("Saved");
+    return true;
+  };
+
+  const save = async () => {
+    setSaving(true);
+    await persist(letter);
     setSaving(false);
+  };
+
+  const letterRef = useRef(letter);
+  letterRef.current = letter;
+  const isDirty = () => JSON.stringify(letterRef.current) !== savedSnapshotRef.current;
+
+  // Autosave an existing letterhead shortly after the last change.
+  useEffect(() => {
+    if (!loaded || loadError) return;
+    if (JSON.stringify(letter) === savedSnapshotRef.current) return;
+    setSaveState((state) => (state === "saving" ? state : "dirty"));
+    if (!id) return;
+    const timer = window.setTimeout(() => {
+      void persist(letter, { quiet: true });
+    }, 1500);
+    return () => window.clearTimeout(timer);
+    // persist is recreated each render; depending on it would restart the timer for no reason.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [letter, loaded, loadError, id]);
+
+  // Warn before closing or reloading the tab with changes that have not reached the server.
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if (!loaded || loadError || !isDirty()) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [loaded, loadError]);
+
+  const goBack = async () => {
+    if (loaded && !loadError && isDirty()) {
+      const saved = id ? await persist(letterRef.current, { quiet: true }) : false;
+      if (!saved && !window.confirm("Your latest changes are not saved. Leave anyway?")) return;
+    }
+    navigate({ to: "/dashboard" });
   };
 
   const cleanText = async () => {
@@ -256,6 +369,10 @@ function Editor() {
 
   const generateShare = async () => {
     if (!user || !id) return toast.error("Save the letter first");
+    // The shared page shows what is on the server, so sync pending edits first.
+    if (isDirty() && !(await persist(letterRef.current, { quiet: true }))) {
+      return toast.error("Couldn't save your latest changes, so no link was created.");
+    }
     try {
       const url = await createShareLink({
         letterheadId: id,
@@ -290,13 +407,36 @@ function Editor() {
     return <p className="p-10 text-muted-foreground">Loading…</p>;
   }
 
+  if (loadError) {
+    return (
+      <div className="ambient-bg flex min-h-screen items-start justify-center px-4 py-16">
+        <Card className="w-full max-w-md">
+          <CardContent className="space-y-4 p-6">
+            <h1 className="text-2xl">Couldn't open this letterhead</h1>
+            <p className="text-sm text-muted-foreground">{loadError}</p>
+            <p className="text-sm text-muted-foreground">
+              Nothing has been changed. Editing is paused so a blank page can't be saved over your
+              letter.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => setReloadCount((count) => count + 1)}>Try again</Button>
+              <Button variant="outline" onClick={() => navigate({ to: "/dashboard" })}>
+                Back to letterheads
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="ambient-bg min-h-screen overflow-x-hidden">
       <div className="mx-auto grid w-full max-w-7xl gap-4 px-3 py-4 sm:gap-5 sm:px-6 sm:py-8 lg:grid-cols-[minmax(320px,420px)_1fr]">
         {/* Controls */}
         <div className="min-w-0 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
+            <Button variant="ghost" size="sm" onClick={() => void goBack()}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
             <div className="grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2 sm:flex">
@@ -328,6 +468,18 @@ function Editor() {
               </DropdownMenu>
             </div>
           </div>
+
+          <p className="text-xs text-muted-foreground" aria-live="polite">
+            {saveState === "saving"
+              ? "Saving…"
+              : saveState === "error"
+                ? "Couldn't save. Check your connection and press Save."
+                : saveState === "dirty"
+                  ? id
+                    ? "Unsaved changes…"
+                    : "Not saved yet. Press Save to keep this letterhead."
+                  : "All changes saved"}
+          </p>
 
           <Input
             value={letter.title}
@@ -460,6 +612,11 @@ function Editor() {
               <Button size="sm" variant="secondary" onClick={generateShare} className="w-full">
                 <Share2 className="mr-2 h-4 w-4" /> Generate share link
               </Button>
+              <p className="text-xs text-muted-foreground">
+                {shareLink
+                  ? "Anyone with this link can view the letter. The QR code on the letter opens the same link."
+                  : "Create a share link to let someone view this letter online. The QR code needs one too."}
+              </p>
               {shareLink && (
                 <Input
                   readOnly
@@ -598,7 +755,7 @@ function Editor() {
                 brand={brand}
                 letter={letter}
                 scale={previewScale}
-                qrUrl={id ? shareUrl("preview") : null}
+                qrUrl={shareLink}
               />
             </CardContent>
           </Card>

@@ -20,6 +20,7 @@ import { Route as AuthenticatedDocumentEditorRouteImport } from './routes/_authe
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedEditorRouteImport } from './routes/_authenticated/editor'
 import { Route as AuthConfirmRouteImport } from './routes/auth/confirm'
+import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AuthenticatedDocumentSlugRouteImport } from './routes/_authenticated/document.$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -77,6 +78,11 @@ const AuthConfirmRoute = AuthConfirmRouteImport.update({
   path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShareTokenRoute = ShareTokenRouteImport.update({
+  id: '/share/$token',
+  path: '/share/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedDocumentSlugRoute =
   AuthenticatedDocumentSlugRouteImport.update({
     id: '/document/$slug',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/editor': typeof AuthenticatedEditorRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/share/$token': typeof ShareTokenRoute
   '/document/$slug': typeof AuthenticatedDocumentSlugRoute
 }
 export interface FileRoutesByTo {
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/editor': typeof AuthenticatedEditorRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/share/$token': typeof ShareTokenRoute
   '/document/$slug': typeof AuthenticatedDocumentSlugRoute
 }
 export interface FileRoutesById {
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/editor': typeof AuthenticatedEditorRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/share/$token': typeof ShareTokenRoute
   '/_authenticated/document/$slug': typeof AuthenticatedDocumentSlugRoute
 }
 export interface FileRouteTypes {
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/editor'
     | '/auth/confirm'
+    | '/share/$token'
     | '/document/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/editor'
     | '/auth/confirm'
+    | '/share/$token'
     | '/document/$slug'
   id:
     | '__root__'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents'
     | '/_authenticated/editor'
     | '/auth/confirm'
+    | '/share/$token'
     | '/_authenticated/document/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   TermsOfServiceRoute: typeof TermsOfServiceRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  ShareTokenRoute: typeof ShareTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -256,6 +269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/share/$token': {
+      id: '/share/$token'
+      path: '/share/$token'
+      fullPath: '/share/$token'
+      preLoaderRoute: typeof ShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/document/$slug': {
       id: '/_authenticated/document/$slug'
       path: '/document/$slug'
@@ -295,6 +315,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   TermsOfServiceRoute: TermsOfServiceRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  ShareTokenRoute: ShareTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

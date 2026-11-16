@@ -201,7 +201,7 @@ const features: { icon: LucideIcon; title: string; body: string; color: string }
   {
     icon: QrCode,
     title: "QR codes",
-    body: "Add a QR code to any document, so whoever is holding the paper can scan it to check the details.",
+    body: "Put a QR code on a letter that opens its online copy, or on an invoice that opens your website or payment page.",
     color: SKY,
   },
   {
@@ -213,7 +213,7 @@ const features: { icon: LucideIcon; title: string; body: string; color: string }
   {
     icon: Send,
     title: "Share and track",
-    body: "Send a link instead of an attachment, and keep each document's status: draft, sent, partial or paid.",
+    body: "Share a letter by link instead of an attachment, and keep each document's status: draft, sent, partial or paid.",
     color: PINK,
   },
 ];
@@ -229,7 +229,7 @@ const faqs = [
   ],
   [
     "Which formats can I export?",
-    "PDF, Word (DOCX) and PNG. You can also copy a document as email-ready HTML or send a share link.",
+    "Documents export to PDF. Letters also export to Word (DOCX), PNG and email-ready HTML, and can be shared by link.",
   ],
   [
     "Does the AI write the whole document?",
@@ -237,7 +237,7 @@ const faqs = [
   ],
   [
     "Who can see my documents?",
-    "Only you, after signing in. A document becomes visible to someone else only when you send them its share link.",
+    "Only you, after signing in. A letter becomes visible to someone else only when you create a share link for it and send it to them.",
   ],
   [
     "Does it work on my phone?",
