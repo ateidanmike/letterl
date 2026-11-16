@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import type { ErrorComponentProps } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth-context";
@@ -35,7 +36,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
 
@@ -76,20 +77,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Zuridoc - Create polished documents in seconds" },
-      { name: "description", content: "Create polished, branded business documents in seconds. AI-drafted letterheads, invoices, receipts, quotations, and delivery notes export-ready as PDF, Word, PNG, or JPG." },
+      {
+        name: "description",
+        content:
+          "Create polished, branded business documents in seconds. AI-drafted letterheads, invoices, receipts, quotations, and delivery notes export-ready as PDF, Word, PNG, or JPG.",
+      },
       { name: "author", content: "Zuridoc" },
       { name: "application-name", content: "Zuridoc" },
       { name: "category", content: "SaaS, Business Document Creation, AI Productivity Tool" },
-      { name: "keywords", content: "Zuridoc, AI document creator, business documents, letterheads, invoices, receipts, quotations, delivery notes, PDF export, DOCX export" },
+      {
+        name: "keywords",
+        content:
+          "Zuridoc, AI document creator, business documents, letterheads, invoices, receipts, quotations, delivery notes, PDF export, DOCX export",
+      },
       { property: "og:title", content: "Zuridoc - Create polished documents in seconds" },
-      { property: "og:description", content: "The modern documents creator for business correspondence. Create polished, branded business documents in seconds with AI writing assistance and multi-format export." },
+      {
+        property: "og:description",
+        content:
+          "The modern documents creator for business correspondence. Create polished, branded business documents in seconds with AI writing assistance and multi-format export.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://www.zuridoc.com" },
       { property: "og:image", content: "https://www.zuridoc.com/icon.png" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Zuridoc" },
       { name: "twitter:title", content: "Zuridoc - Create polished documents in seconds" },
-      { name: "twitter:description", content: "AI-powered business document creation for letterheads, invoices, receipts, quotations, and delivery notes." },
+      {
+        name: "twitter:description",
+        content:
+          "AI-powered business document creation for letterheads, invoices, receipts, quotations, and delivery notes.",
+      },
     ],
     links: [
       {
