@@ -69,6 +69,26 @@ describe("buildHtmlEmail", () => {
     expect(html).not.toContain("Sincerely,");
   });
 
+  it("includes the drawn signature, even without a typed name", () => {
+    const html = buildHtmlEmail(brand, {
+      ...letter,
+      signature_name: "",
+      signature_title: "",
+      signature_data: "data:image/png;base64,AAAA",
+    });
+    expect(html).toContain('<img src="data:image/png;base64,AAAA" alt="Signature"');
+    expect(html).toContain("Sincerely,");
+  });
+
+  it("drops a signature that is not an embedded image", () => {
+    const html = buildHtmlEmail(brand, {
+      ...letter,
+      signature_data: 'https://evil.example/x.png" onerror="alert(1)',
+    });
+    expect(html).not.toContain("evil.example");
+    expect(html).not.toContain("onerror");
+  });
+
   it("lists only the contact details that are filled in", () => {
     const html = buildHtmlEmail({ ...brand, phone: "", website: "" }, letter);
     expect(html).toContain(">hello@example.com</td>");

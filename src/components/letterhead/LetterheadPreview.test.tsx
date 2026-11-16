@@ -65,6 +65,22 @@ describe("LetterheadPreview", () => {
     expect(screen.getByAltText("Signature").getAttribute("src")).toBe("data:image/png;base64,SIG");
   });
 
+  it("shows a drawn signature even when no name is typed", () => {
+    render(
+      <LetterheadPreview
+        brand={brand}
+        letter={{
+          ...letter,
+          signature_name: "",
+          signature_title: "",
+          signature_data: "data:image/png;base64,SIG",
+        }}
+      />,
+    );
+    expect(screen.getByAltText("Signature")).toBeTruthy();
+    expect(screen.getByText("Sincerely,")).toBeTruthy();
+  });
+
   it("shows the logo in place of the company name", () => {
     render(
       <LetterheadPreview

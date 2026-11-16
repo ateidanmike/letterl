@@ -430,6 +430,7 @@ function DocumentsPage() {
         accent_color: invoice.accent_color,
         signature_name: invoice.signature_name,
         signature_title: invoice.signature_title,
+        signature_data: invoice.signature_data ?? null,
         status,
       })
       .select("id,title,doc_number")
@@ -489,6 +490,7 @@ function DocumentsPage() {
       accent_color: source.accent_color,
       signature_name: source.signature_name,
       signature_title: source.signature_title,
+      signature_data: source.signature_data ?? null,
       status: "draft",
     });
     setDuplicatingId(null);

@@ -43,3 +43,11 @@ verify_jwt = true
 
 [functions.ai-assist]
 verify_jwt = true
+
+# Called by Supabase Auth itself (the Send Email hook), not by a signed-in user.
+# The function checks the hook's signature instead of a JWT.
+[functions.send-auth-email]
+verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = true

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useId, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
+import { requestWelcomeEmail } from "@/lib/welcome-email";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -134,6 +135,7 @@ function LoginPage() {
 
     if (error) toast.error(error.message);
     else {
+      requestWelcomeEmail();
       toast.success("Email confirmed.");
       navigate({ to: "/dashboard" });
     }

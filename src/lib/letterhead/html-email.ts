@@ -15,7 +15,9 @@ export function buildHtmlEmail(brand: Brand, letter: Letterhead) {
   const font = letter.font_family;
   const dateStr = letter.letter_date
     ? new Date(letter.letter_date).toLocaleDateString(undefined, {
-        year: "numeric", month: "long", day: "numeric",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       })
     : "";
   const bodyHtml = esc(letter.body).replace(/\n/g, "<br/>");
@@ -25,7 +27,17 @@ export function buildHtmlEmail(brand: Brand, letter: Letterhead) {
     ? `<img src="${esc(brand.logo_url)}" alt="${esc(brand.company_name)}" style="height:80px;display:block;margin:0 auto;" />`
     : `<div style="font-size:24px;font-weight:700;color:${primary};text-align:center;">${esc(brand.company_name) || "Your Company"}</div>`;
 
-  const contact = [brand.phone, brand.email, brand.website].filter(Boolean).map(esc).join(" &nbsp;·&nbsp; ");
+  // Only an embedded image is allowed here; anything else is dropped.
+  const signature = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(
+    letter.signature_data ?? "",
+  )
+    ? `<img src="${letter.signature_data}" alt="Signature" style="height:56px;max-width:240px;display:block;margin:8px 0 4px;" />`
+    : "";
+
+  const contact = [brand.phone, brand.email, brand.website]
+    .filter(Boolean)
+    .map(esc)
+    .join(" &nbsp;·&nbsp; ");
 
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>${esc(letter.title)}</title></head>
@@ -39,13 +51,17 @@ export function buildHtmlEmail(brand: Brand, letter: Letterhead) {
           ${recipientHtml ? `<p style="margin:0 0 16px;">${recipientHtml}</p>` : ""}
           ${letter.subject ? `<p style="margin:0 0 16px;font-weight:600;">Re: ${esc(letter.subject)}</p>` : ""}
           <div>${bodyHtml}</div>
-          ${letter.signature_name || letter.signature_title ? `
+          ${
+            letter.signature_name || letter.signature_title || signature
+              ? `
             <div style="margin-top:36px;">
               <p style="margin:0;">Sincerely,</p>
-              <div style="height:32px;"></div>
+              ${signature || '<div style="height:32px;"></div>'}
               <p style="margin:0;font-weight:600;">${esc(letter.signature_name)}</p>
               <p style="margin:0;color:#475569;">${esc(letter.signature_title)}</p>
-            </div>` : ""}
+            </div>`
+              : ""
+          }
         </td></tr>
         <tr><td style="padding:14px 40px;background:${primary};color:#ffffff;text-align:center;font-size:11px;">${contact}</td></tr>
         <tr><td style="height:6px;background:${accent};"></td></tr>

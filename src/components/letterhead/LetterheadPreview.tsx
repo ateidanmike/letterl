@@ -98,14 +98,22 @@ function Body({ letter }: { letter: Letterhead }) {
           <span style={{ color: "#94a3b8" }}>Start typing your letter…</span>
         )}
       </div>
-      {(letter.signature_name || letter.signature_title) && (
+      {(letter.signature_name || letter.signature_title || letter.signature_data) && (
         <div style={{ marginTop: 40 }}>
           <p style={{ marginBottom: 0 }}>Sincerely,</p>
           {letter.signature_data ? (
             <img
               src={letter.signature_data}
               alt="Signature"
-              style={{ height: 56, marginTop: 8, marginBottom: -4 }}
+              style={{
+                height: 56,
+                maxWidth: 240,
+                objectFit: "contain",
+                objectPosition: "left bottom",
+                display: "block",
+                marginTop: 8,
+                marginBottom: -4,
+              }}
             />
           ) : (
             <div style={{ height: 28 }} />

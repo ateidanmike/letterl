@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { LogIn, RefreshCw } from "lucide-react";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { requestWelcomeEmail } from "@/lib/welcome-email";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,6 +71,8 @@ function ConfirmEmailPage() {
         return;
       }
 
+      // Only a first-time confirmation earns the welcome email.
+      if (type === "email" || type === "signup") requestWelcomeEmail();
       toast.success("Email confirmed.");
       navigate({ to: next, replace: true });
     };

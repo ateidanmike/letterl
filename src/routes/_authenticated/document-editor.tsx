@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { ArrowLeft, Save, Download, Plus, Trash2, Copy, Eraser, Upload } from "lucide-react";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
+import { SignaturePad } from "@/components/letterhead/SignaturePad";
 import {
   DOC_TYPES,
   DOC_TEMPLATES,
@@ -115,6 +116,7 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
     accent_color: currentDoc.accent_color,
     signature_name: currentDoc.signature_name,
     signature_title: currentDoc.signature_title,
+    signature_data: currentDoc.signature_data ?? null,
     status: currentDoc.status,
   });
 
@@ -943,6 +945,16 @@ export function BusinessDocumentEditor({ documentId }: { documentId?: string }) 
                 placeholder="Title"
                 value={doc.signature_title}
                 onChange={(e) => setDoc({ ...doc, signature_title: e.target.value })}
+              />
+            </div>
+            <div className="rounded-lg border-2 border-[var(--nb-ink)] bg-background p-3">
+              <Label className="text-xs">Signature</Label>
+              <p className="mb-2 mt-1 text-xs text-muted-foreground">
+                Optional. Draw it here or upload a picture of it.
+              </p>
+              <SignaturePad
+                value={doc.signature_data ?? null}
+                onChange={(value) => setDoc((d) => ({ ...d, signature_data: value }))}
               />
             </div>
           </Section>
